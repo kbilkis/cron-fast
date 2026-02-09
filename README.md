@@ -233,4 +233,4 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 
 ## License
 
-MIT
+MIT - see [LICENSE](LICENSE) for details.

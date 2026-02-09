@@ -3,15 +3,23 @@
   "version": "0.1.0",
   "description": "Lightweight, fast cron parser with timezone support - zero dependencies",
   "keywords": [
+    "browser",
+    "bun",
     "cron",
+    "deno",
+    "esm",
     "fast",
     "lightweight",
     "parser",
     "performance",
     "schedule",
+    "scheduler",
     "timezone",
+    "tree-shakeable",
+    "typescript",
     "zero-dependencies"
   ],
+  "homepage": "https://github.com/kbilkis/cron-fast#readme",
   "license": "MIT",
   "author": "Kasparas Bilkis kasparas@bilkis.lt",
   "repository": {
@@ -45,6 +53,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:workerd": "vitest run --config vitest.workerd.config.ts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
@@ -53,14 +63,16 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
-    "@types/node": "^25.2.0",
-    "@vitest/ui": "^4.0.18",
+    "@cloudflare/vitest-pool-workers": "^0.12.10",
+    "@types/node": "^25.2.2",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "oxfmt": "^0.28.0",
     "oxlint": "^1.43.0",
     "tsdown": "^0.20.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "vitest": "3.2.4"
   },
-  "packageManager": "pnpm@10.15.1"
+  "packageManager": "pnpm@10.29.2"
 }
