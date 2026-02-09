@@ -159,18 +159,32 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 **Note:** All returned Date objects are in UTC (ending with `Z` in `.toISOString()`). Use `.toLocaleString()` to display in any timezone.
 
-## Tree-Shaking
+## Bundle Size
 
-cron-fast is fully tree-shakeable. Import only what you need:
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios:
+
+| Import                                               | Raw      | Minified | Gzipped     |
+| ---------------------------------------------------- | -------- | -------- | ----------- |
+| `Full bundle (all exports)`                          | 13.56 KB | 5.88 KB  | **2.26 KB** |
+| `nextRun only`                                       | 11.99 KB | 5.16 KB  | **2.02 KB** |
+| `previousRun only`                                   | 12.00 KB | 5.16 KB  | **2.02 KB** |
+| `nextRuns only`                                      | 12.38 KB | 5.31 KB  | **2.08 KB** |
+| `isValid only`                                       | 3.92 KB  | 1.75 KB  | **932 B**   |
+| `parse only`                                         | 3.80 KB  | 1.70 KB  | **907 B**   |
+| `isMatch only`                                       | 5.44 KB  | 2.40 KB  | **1.18 KB** |
+| `Validation only (isValid + parse)`                  | 3.92 KB  | 1.75 KB  | **934 B**   |
+| `Scheduling only (nextRun + previousRun + nextRuns)` | 12.87 KB | 5.56 KB  | **2.10 KB** |
+
+Import only what you need:
 
 ```typescript
-// Small bundle - only validation
+// Small bundle - only validation (~900 B gzipped)
 import { isValid } from "cron-fast";
 
-// Medium bundle - one function + dependencies
+// Medium bundle - one function + dependencies (~2 KB gzipped)
 import { nextRun } from "cron-fast";
 
-// Full bundle - everything
+// Full bundle - everything (~2.3 KB gzipped)
 import * as cron from "cron-fast";
 ```
 
