@@ -1,6 +1,6 @@
 {
   "name": "@kbilkis/cron-fast",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Fast JavaScript/TypeScript cron parser with timezone support - works in Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.",
   "exports": "./src/index.ts",
   "publish": {

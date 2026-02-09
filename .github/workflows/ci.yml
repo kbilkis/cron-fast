@@ -42,6 +42,7 @@ jobs:
         run: pnpm run test
 
       - name: Build
+        if: matrix.node >= 20
         run: pnpm run build
 
   # Test with Deno
@@ -56,9 +57,11 @@ jobs:
         with:
           deno-version: v2.x
 
+      - name: Install dependencies
+        run: deno install
+
       - name: Run tests with Deno
-        run: |
-          deno test --allow-read --allow-env test/*.test.ts
+        run: deno run -A npm:vitest run
 
   # Test with Bun
   test-bun:
