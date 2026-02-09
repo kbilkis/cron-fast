@@ -1,35 +1,39 @@
 # cron-fast
 
-A fast and lightweight cron parser with timezone support and zero dependencies.
+**Fast JavaScript/TypeScript cron parser with timezone support.** Works everywhere: Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.
 
 ## Features
 
+- **Universal** - Works in Node.js, Deno, Bun, Cloudflare Workers, and browsers
 - **Lightweight** - Zero dependencies
 - **Fast** - Optimal field increment algorithm
 - **Tree-shakeable** - Import only what you need
 - **Timezone support** - Built-in timezone handling using native `Intl`
 - **Modern** - ESM + CJS, TypeScript-first
-- **Fully tested** - Comprehensive test coverage
+- **Fully tested** - Comprehensive test coverage across all runtimes
 - **Simple API** - Clean, intuitive interface
 - **ISO 8601 compatible** - Works with all standard date formats
 
 ## Installation
 
 ```bash
-# npm
+# Node.js (npm)
 npm install cron-fast
 
-# pnpm
+# Node.js (pnpm)
 pnpm add cron-fast
 
-# yarn
+# Node.js (yarn)
 yarn add cron-fast
 
-# jsr
-npx jsr add @kbilkis/cron-fast
-
-# deno
+# Deno (JSR)
 deno add jsr:@kbilkis/cron-fast
+
+# Bun
+bun add cron-fast
+
+# Any runtime (JSR)
+npx jsr add @kbilkis/cron-fast
 ```
 
 ## Quick Start

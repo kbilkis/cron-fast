@@ -1,15 +1,19 @@
 {
   "name": "cron-fast",
   "version": "0.1.0",
-  "description": "Lightweight, fast cron parser with timezone support - zero dependencies",
+  "description": "Fast JavaScript/TypeScript cron parser with timezone support - works in Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.",
   "keywords": [
     "browser",
     "bun",
+    "cloudflare-workers",
     "cron",
     "deno",
     "esm",
     "fast",
+    "javascript",
     "lightweight",
+    "node",
+    "nodejs",
     "parser",
     "performance",
     "schedule",
@@ -17,6 +21,7 @@
     "timezone",
     "tree-shakeable",
     "typescript",
+    "workerd",
     "zero-dependencies"
   ],
   "homepage": "https://github.com/kbilkis/cron-fast#readme",
