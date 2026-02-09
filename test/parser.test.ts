@@ -41,6 +41,11 @@ describe("parser", () => {
       expect(result.minute).toEqual([10, 20, 30, 40]);
     });
 
+    it("should parse step values with single start value", () => {
+      const result = parse("10/15 * * * *");
+      expect(result.minute).toEqual([10, 25, 40, 55]);
+    });
+
     it("should parse comma-separated values", () => {
       const result = parse("0,15,30,45 9,12,15 * * *");
       expect(result.minute).toEqual([0, 15, 30, 45]);
@@ -85,6 +90,18 @@ describe("parser", () => {
 
     it("should throw on out of range value", () => {
       expect(() => parse("60 * * * *")).toThrow("out of range");
+    });
+
+    it("should throw on out of range value in step range", () => {
+      expect(() => parse("70-80/5 * * * *")).toThrow("No valid values");
+    });
+
+    it("should throw on out of range value in simple range", () => {
+      expect(() => parse("70-80 * * * *")).toThrow("No valid values");
+    });
+
+    it("should throw on invalid value name", () => {
+      expect(() => parse("0 0 * * notaday")).toThrow("Invalid value");
     });
 
     it("should throw on impossible day/month combination (Feb 31)", () => {

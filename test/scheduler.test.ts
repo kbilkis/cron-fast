@@ -952,4 +952,166 @@ describe("scheduler", () => {
       });
     });
   });
+
+  describe("Edge case coverage", () => {
+    describe("minute rollover to next hour (scheduler.ts:160-161)", () => {
+      it("should rollover to next hour when no valid minute exists in current hour", () => {
+        const from = new Date("2026-03-15T10:58:00Z");
+        const next = nextRun("30,45 11 * * *", { from });
+
+        expect(next.getUTCDate()).toBe(15);
+        expect(next.getUTCHours()).toBe(11);
+        expect(next.getUTCMinutes()).toBe(30);
+      });
+
+      it("should hit exact branch for minute rollover with targetHour (lines 160-161)", () => {
+        const from = new Date("2026-03-15T14:45:00Z");
+        const next = nextRun("0,15 15,16 * * *", { from });
+
+        expect(next.getUTCHours()).toBe(15);
+        expect(next.getUTCMinutes()).toBe(0);
+      });
+
+      it("should handle prev direction minute rollover to prev hour (lines 160-161)", () => {
+        const from = new Date("2026-03-15T14:05:00Z");
+        const prev = previousRun("45,59 13,14 * * *", { from });
+
+        expect(prev.getUTCHours()).toBe(13);
+        expect(prev.getUTCMinutes()).toBe(59);
+      });
+
+      it("should handle minute rollover when at minute 59", () => {
+        const from = new Date("2026-03-15T23:58:00Z");
+        const next = nextRun("30 0 * * *", { from });
+
+        expect(next.getUTCDate()).toBe(16);
+        expect(next.getUTCHours()).toBe(0);
+        expect(next.getUTCMinutes()).toBe(30);
+      });
+
+      it("should handle minute rollover with restricted minutes in current hour", () => {
+        const from = new Date("2026-03-15T14:40:00Z");
+        const next = nextRun("0,15,30 15 * * *", { from });
+
+        expect(next.getUTCDate()).toBe(15);
+        expect(next.getUTCHours()).toBe(15);
+        expect(next.getUTCMinutes()).toBe(0);
+      });
+
+      it("should skip to next hour when no valid minutes left in current hour", () => {
+        const from = new Date("2026-03-15T10:50:00Z");
+        const next = nextRun("15,30 11 * * *", { from });
+
+        expect(next.getUTCDate()).toBe(15);
+        expect(next.getUTCHours()).toBe(11);
+        expect(next.getUTCMinutes()).toBe(15);
+      });
+
+      it("should use nextRuns to iterate through hour boundaries", () => {
+        const from = new Date("2026-03-15T10:30:00Z");
+        const runs = nextRuns("30,45 11 * * *", 3, { from });
+
+        expect(runs).toHaveLength(3);
+        expect(runs[0].getUTCHours()).toBe(11);
+        expect(runs[0].getUTCMinutes()).toBe(30);
+        expect(runs[1].getUTCMinutes()).toBe(45);
+        expect(runs[2].getUTCDate()).toBe(16);
+        expect(runs[2].getUTCHours()).toBe(11);
+        expect(runs[2].getUTCMinutes()).toBe(30);
+      });
+    });
+
+    describe("month boundary with invalid day (scheduler.ts:239-241)", () => {
+      it("should move to previous month when current month has no valid day", () => {
+        const from = new Date("2026-04-01T00:00:00Z");
+        const prev = previousRun("0 12 31 * *", { from });
+
+        expect(prev.getUTCMonth()).toBe(2);
+        expect(prev.getUTCDate()).toBe(31);
+        expect(prev.getUTCHours()).toBe(12);
+        expect(prev.getUTCMinutes()).toBe(0);
+      });
+
+      it("should trigger resetToMonthBoundary when no valid day in month for prev direction", () => {
+        const from = new Date("2026-05-01T12:00:00Z");
+        const prev = previousRun("0 9 31 * *", { from });
+
+        expect(prev.getUTCMonth()).toBe(2);
+        expect(prev.getUTCDate()).toBe(31);
+        expect(prev.getUTCHours()).toBe(9);
+      });
+
+      it("should handle February with day 31 going to January", () => {
+        const from = new Date("2026-03-01T00:00:00Z");
+        const prev = previousRun("0 9 31 * *", { from });
+
+        expect(prev.getUTCMonth()).toBe(0);
+        expect(prev.getUTCDate()).toBe(31);
+        expect(prev.getUTCHours()).toBe(9);
+      });
+
+      it("should handle April 31 case when going backwards", () => {
+        const from = new Date("2026-05-01T00:00:00Z");
+        const prev = previousRun("0 12 31 * *", { from });
+
+        expect(prev.getUTCMonth()).toBe(2);
+        expect(prev.getUTCDate()).toBe(31);
+      });
+
+      it("should handle June 31 case when going backwards", () => {
+        const from = new Date("2026-07-01T00:00:00Z");
+        const prev = previousRun("0 12 31 * *", { from });
+
+        expect(prev.getUTCMonth()).toBe(4);
+        expect(prev.getUTCDate()).toBe(31);
+      });
+
+      it("should handle September 31 case when going backwards", () => {
+        const from = new Date("2026-10-01T00:00:00Z");
+        const prev = previousRun("0 12 31 * *", { from });
+
+        expect(prev.getUTCMonth()).toBe(7);
+        expect(prev.getUTCDate()).toBe(31);
+      });
+
+      it("should handle November 31 case when going backwards", () => {
+        const from = new Date("2026-12-01T00:00:00Z");
+        const prev = previousRun("0 12 31 * *", { from });
+
+        expect(prev.getUTCMonth()).toBe(9);
+        expect(prev.getUTCDate()).toBe(31);
+      });
+
+      it("should trigger moveToMonth recursion for prev with no valid days", () => {
+        const from = new Date("2026-06-15T12:00:00Z");
+        const prev = previousRun("0 12 31 1 *", { from });
+
+        expect(prev.getUTCMonth()).toBe(0);
+        expect(prev.getUTCDate()).toBe(31);
+        expect(prev.getUTCFullYear()).toBe(2026);
+      });
+    });
+
+    describe("MAX_ITERATIONS safety (lines 93-94)", () => {
+      it("should find matches efficiently without hitting iteration limit", () => {
+        const from = new Date("2026-01-01T00:00:00Z");
+        const sparseCron = "0 0 29 2 1";
+
+        const next = nextRun(sparseCron, { from });
+
+        expect(next.getUTCDate()).toBe(29);
+        expect(next.getUTCMonth()).toBe(1);
+        expect(next.getUTCFullYear()).toBe(2028);
+      });
+
+      it("should handle sparse cron expressions within iteration limit", () => {
+        const from = new Date("2026-01-01T00:00:00Z");
+        const next = nextRun("0 0 31 12 *", { from });
+
+        expect(next.getUTCDate()).toBe(31);
+        expect(next.getUTCMonth()).toBe(11);
+        expect(next.getUTCFullYear()).toBe(2026);
+      });
+    });
+  });
 });

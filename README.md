@@ -1,18 +1,15 @@
 # cron-fast
 
 [![npm version](https://badge.fury.io/js/cron-fast.svg)](https://www.npmjs.com/package/cron-fast)
-[![Node.js](https://img.shields.io/node/v/cron-fast)](https://www.npmjs.com/package/cron-fast)
-[![Bundle Size](https://pkg-size.dev/badge/bundle/cron-fast)](https://pkg-size.dev/cron-fast)
+[![npm provenance](https://img.shields.io/badge/provenance-attested-brightgreen)](https://www.npmjs.com/package/cron-fast)
 [![JSR](https://jsr.io/badges/@kbilkis/cron-fast)](https://jsr.io/@kbilkis/cron-fast)
 [![JSR Score](https://jsr.io/badges/@kbilkis/cron-fast/score)](https://jsr.io/@kbilkis/cron-fast)
 [![CI](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml/badge.svg)](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/github/kbilkis/cron-fast/graph/badge.svg?token=5MXFKS45XV)](https://codecov.io/github/kbilkis/cron-fast)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Last commit](https://img.shields.io/github/last-commit/kbilkis/cron-fast)](https://github.com/kbilkis/cron-fast/commits/master)
-[![GitHub stars](https://img.shields.io/github/stars/kbilkis/cron-fast?style=social)](https://github.com/kbilkis/cron-fast)
+[![npm bundle size](https://img.shields.io/bundlejs/size/cron-fast)](https://bundlejs.com/?q=cron-fast)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Fast JavaScript/TypeScript cron parser with timezone support.** Works everywhere: Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.
+**Fast and tiny JavaScript/TypeScript cron parser with timezone support.** Works everywhere: Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.
 
 ## Features
 
