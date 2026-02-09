@@ -81,9 +81,9 @@ jobs:
       - name: Run tests
         run: bun test
 
-  # Test with workerd (Cloudflare Workers runtime via Miniflare)
+  # Test with Cloudflare Workers runtime (workerd via @cloudflare/vitest-pool-workers)
   test-workerd:
-    name: Test on workerd (Miniflare)
+    name: Test on workerd (Cloudflare Workers)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

@@ -30,8 +30,19 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
-            # Check if package.json version changed in this commit
-            git diff HEAD^ HEAD -- package.json | grep -q '"version"' && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
+            # Get version from current and previous commit
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            git checkout HEAD^
+            PREVIOUS_VERSION=$(node -p "require('./package.json').version")
+            git checkout -
+            
+            if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+              echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+              echo "changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "Version unchanged: $CURRENT_VERSION"
+              echo "changed=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Get version
