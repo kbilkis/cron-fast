@@ -30,7 +30,7 @@ export function isOrMode(parsed: ParsedCron): boolean {
 /**
  * Day-of-month and day-of-week use OR logic by default
  * If both are restricted (not *), match either one
- * 
+ *
  * @param daysInMonth - Optional validation that day is valid for the month (used by scheduler)
  */
 export function matchesDayOrWeekday(

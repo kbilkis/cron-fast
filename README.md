@@ -165,15 +165,15 @@ cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual
 
 | Import                                               | Raw      | Minified | Gzipped     |
 | ---------------------------------------------------- | -------- | -------- | ----------- |
-| `Full bundle (all exports)`                          | 13.56 KB | 5.88 KB  | **2.26 KB** |
-| `nextRun only`                                       | 11.99 KB | 5.16 KB  | **2.02 KB** |
-| `previousRun only`                                   | 12.00 KB | 5.16 KB  | **2.02 KB** |
-| `nextRuns only`                                      | 12.38 KB | 5.31 KB  | **2.08 KB** |
-| `isValid only`                                       | 3.92 KB  | 1.75 KB  | **932 B**   |
-| `parse only`                                         | 3.80 KB  | 1.70 KB  | **907 B**   |
-| `isMatch only`                                       | 5.44 KB  | 2.40 KB  | **1.18 KB** |
-| `Validation only (isValid + parse)`                  | 3.92 KB  | 1.75 KB  | **934 B**   |
-| `Scheduling only (nextRun + previousRun + nextRuns)` | 12.87 KB | 5.56 KB  | **2.10 KB** |
+| `Full bundle (all exports)                           ` | 14.22 KB | 6.16 KB |   **2.35 KB** |
+| `nextRun only                                        ` | 12.64 KB | 5.43 KB |   **2.12 KB** |
+| `previousRun only                                    ` | 12.65 KB | 5.43 KB |   **2.12 KB** |
+| `nextRuns only                                       ` | 13.03 KB | 5.58 KB |   **2.18 KB** |
+| `isValid only                                        ` |  4.00 KB | 1.81 KB |     **951 B** |
+| `parse only                                          ` |  3.89 KB | 1.76 KB |     **926 B** |
+| `isMatch only                                        ` |  5.59 KB | 2.54 KB |   **1.22 KB** |
+| `Validation only (isValid + parse)                   ` |  4.01 KB | 1.81 KB |     **952 B** |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.52 KB | 5.83 KB |   **2.20 KB** |
 
 Import only what you need:
 

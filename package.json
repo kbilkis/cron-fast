@@ -65,7 +65,8 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "typecheck": "tsc --noEmit",
-    "bundle-size": "tsx scripts/bundle-size.ts"
+    "bundle-size": "tsx scripts/bundle-size.ts",
+    "update-bundle-size": "tsx scripts/bundle-size.ts --update"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.12.10",

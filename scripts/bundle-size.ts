@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 /**
- * Analyze bundle sizes for different import scenarios
+ * Bundle size analysis script
+ * 
+ * Usage:
+ *   pnpm bundle-size          - Display bundle sizes only
+ *   pnpm update-bundle-size   - Display and update README.md
  */
 import { build } from "esbuild";
 import { gzipSync } from "node:zlib";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 const rootDir = process.cwd();
@@ -13,48 +17,39 @@ const indexPath = join(rootDir, "src/index.ts");
 const scenarios = [
   {
     name: "Full bundle (all exports)",
-    code: `import * as cron from "${indexPath}";
-console.log(cron);`,
+    code: `import * as cron from "${indexPath}";\nconsole.log(cron);`,
   },
   {
     name: "nextRun only",
-    code: `import { nextRun } from "${indexPath}";
-console.log(nextRun);`,
+    code: `import { nextRun } from "${indexPath}";\nconsole.log(nextRun);`,
   },
   {
     name: "previousRun only",
-    code: `import { previousRun } from "${indexPath}";
-console.log(previousRun);`,
+    code: `import { previousRun } from "${indexPath}";\nconsole.log(previousRun);`,
   },
   {
     name: "nextRuns only",
-    code: `import { nextRuns } from "${indexPath}";
-console.log(nextRuns);`,
+    code: `import { nextRuns } from "${indexPath}";\nconsole.log(nextRuns);`,
   },
   {
     name: "isValid only",
-    code: `import { isValid } from "${indexPath}";
-console.log(isValid);`,
+    code: `import { isValid } from "${indexPath}";\nconsole.log(isValid);`,
   },
   {
     name: "parse only",
-    code: `import { parse } from "${indexPath}";
-console.log(parse);`,
+    code: `import { parse } from "${indexPath}";\nconsole.log(parse);`,
   },
   {
     name: "isMatch only",
-    code: `import { isMatch } from "${indexPath}";
-console.log(isMatch);`,
+    code: `import { isMatch } from "${indexPath}";\nconsole.log(isMatch);`,
   },
   {
     name: "Validation only (isValid + parse)",
-    code: `import { isValid, parse } from "${indexPath}";
-console.log(isValid, parse);`,
+    code: `import { isValid, parse } from "${indexPath}";\nconsole.log(isValid, parse);`,
   },
   {
     name: "Scheduling only (nextRun + previousRun + nextRuns)",
-    code: `import { nextRun, previousRun, nextRuns } from "${indexPath}";
-console.log(nextRun, previousRun, nextRuns);`,
+    code: `import { nextRun, previousRun, nextRuns } from "${indexPath}";\nconsole.log(nextRun, previousRun, nextRuns);`,
   },
 ];
 
@@ -118,7 +113,43 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+function generateMarkdownTable(results: BundleResult[]): string {
+  const rows = results.map((result) => {
+    const name = result.name.padEnd(52);
+    const raw = formatBytes(result.raw).padStart(8);
+    const minified = formatBytes(result.minified).padStart(7);
+    const gzipped = `**${formatBytes(result.gzipped)}**`.padStart(13);
+    return `| \`${name}\` | ${raw} | ${minified} | ${gzipped} |`;
+  });
+
+  return [
+    "| Import                                               | Raw      | Minified | Gzipped     |",
+    "| ---------------------------------------------------- | -------- | -------- | ----------- |",
+    ...rows,
+  ].join("\n");
+}
+
+function updateReadme(table: string): void {
+  const readmePath = join(rootDir, "README.md");
+  let readme = readFileSync(readmePath, "utf-8");
+
+  // Find the bundle size table and replace it
+  const tableStart = readme.indexOf("| Import");
+  const tableEnd = readme.indexOf("\n\nImport only what you need:");
+
+  if (tableStart === -1 || tableEnd === -1) {
+    throw new Error("Could not find bundle size table in README.md");
+  }
+
+  readme = readme.slice(0, tableStart) + table + readme.slice(tableEnd);
+
+  writeFileSync(readmePath, readme, "utf-8");
+  console.log("✅ README.md updated successfully!");
+}
+
 async function main() {
+  const shouldUpdate = process.argv.includes("--update");
+
   console.log("📦 Analyzing bundle sizes...\n");
 
   const results: BundleResult[] = [];
@@ -126,36 +157,19 @@ async function main() {
   for (const scenario of scenarios) {
     const result = await analyzeBundle(scenario.name, scenario.code);
     results.push(result);
+    console.log(`✓ ${scenario.name}: ${formatBytes(result.gzipped)} gzipped`);
   }
 
-  // Print results
-  console.log("Bundle Size Analysis");
-  console.log("=".repeat(80));
-  console.log(
-    `${"Scenario".padEnd(50)} ${"Raw".padStart(10)} ${"Minified".padStart(10)} ${"Gzipped".padStart(10)}`,
-  );
-  console.log("-".repeat(80));
+  if (shouldUpdate) {
+    console.log("\n📝 Generating markdown table...");
+    const table = generateMarkdownTable(results);
 
-  for (const result of results) {
-    console.log(
-      `${result.name.padEnd(50)} ${formatBytes(result.raw).padStart(10)} ${formatBytes(result.minified).padStart(10)} ${formatBytes(result.gzipped).padStart(10)}`,
-    );
+    console.log("\n📄 Updating README.md...");
+    updateReadme(table);
+  } else {
+    console.log("\n✅ Bundle size analysis complete!");
+    console.log("💡 Run with --update flag to update README.md");
   }
-
-  console.log("=".repeat(80));
-
-  // Generate markdown table
-  console.log("\n📝 Markdown for README:\n");
-  console.log("| Import | Raw | Minified | Gzipped |");
-  console.log("|--------|-----|----------|---------|");
-
-  for (const result of results) {
-    console.log(
-      `| \`${result.name}\` | ${formatBytes(result.raw)} | ${formatBytes(result.minified)} | **${formatBytes(result.gzipped)}** |`,
-    );
-  }
-
-  console.log("\n✅ Done!");
 }
 
 main().catch(console.error);
