@@ -1335,11 +1335,11 @@ describe("scheduler", () => {
         const runs = nextRuns("0 0 15 * 1", 5, { from });
 
         // Should get: Feb 2 (Mon), Feb 9 (Mon), Feb 15 (Sun, day 15), Feb 16 (Mon), Feb 23 (Mon)
-        expect(runs[0].toDateString()).toBe("Mon Feb 02 2026");
-        expect(runs[1].toDateString()).toBe("Mon Feb 09 2026");
-        expect(runs[2].toDateString()).toBe("Sun Feb 15 2026"); // Day 15
-        expect(runs[3].toDateString()).toBe("Mon Feb 16 2026");
-        expect(runs[4].toDateString()).toBe("Mon Feb 23 2026");
+        expect(runs[0].toISOString()).toBe("2026-02-02T00:00:00.000Z");
+        expect(runs[1].toISOString()).toBe("2026-02-09T00:00:00.000Z");
+        expect(runs[2].toISOString()).toBe("2026-02-15T00:00:00.000Z");
+        expect(runs[3].toISOString()).toBe("2026-02-16T00:00:00.000Z");
+        expect(runs[4].toISOString()).toBe("2026-02-23T00:00:00.000Z");
       });
 
       it("should treat explicit all weekdays (0-6) as restricted, not wildcard", () => {
