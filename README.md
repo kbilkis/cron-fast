@@ -161,19 +161,19 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios:
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v0.1.3):
 
-| Import                                               | Raw      | Minified | Gzipped     |
-| ---------------------------------------------------- | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 14.22 KB | 6.16 KB |   **2.35 KB** |
-| `nextRun only                                        ` | 12.64 KB | 5.43 KB |   **2.12 KB** |
-| `previousRun only                                    ` | 12.65 KB | 5.43 KB |   **2.12 KB** |
-| `nextRuns only                                       ` | 13.03 KB | 5.58 KB |   **2.18 KB** |
-| `isValid only                                        ` |  4.00 KB | 1.81 KB |     **951 B** |
-| `parse only                                          ` |  3.89 KB | 1.76 KB |     **926 B** |
-| `isMatch only                                        ` |  5.59 KB | 2.54 KB |   **1.22 KB** |
-| `Validation only (isValid + parse)                   ` |  4.01 KB | 1.81 KB |     **952 B** |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.52 KB | 5.83 KB |   **2.20 KB** |
+| Import                                                 | Raw      | Minified | Gzipped     |
+| ------------------------------------------------------ | -------- | -------- | ----------- |
+| `Full bundle (all exports)                           ` | 14.22 KB | 6.16 KB  | **2.35 KB** |
+| `nextRun only                                        ` | 12.64 KB | 5.43 KB  | **2.12 KB** |
+| `previousRun only                                    ` | 12.65 KB | 5.43 KB  | **2.12 KB** |
+| `nextRuns only                                       ` | 13.03 KB | 5.58 KB  | **2.18 KB** |
+| `isValid only                                        ` | 4.00 KB  | 1.81 KB  | **951 B**   |
+| `parse only                                          ` | 3.89 KB  | 1.76 KB  | **926 B**   |
+| `isMatch only                                        ` | 5.59 KB  | 2.54 KB  | **1.22 KB** |
+| `Validation only (isValid + parse)                   ` | 4.01 KB  | 1.81 KB  | **952 B**   |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.52 KB | 5.83 KB  | **2.20 KB** |
 
 Import only what you need:
 
@@ -257,6 +257,23 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 - **Validation**: Always check `isValid()` before parsing user input
 - **Day 0 and 7**: Both represent Sunday in the day-of-week field
 - **Ranges are inclusive**: `1-5` includes both 1 and 5
+
+## Performance
+
+cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
+
+> Tested with cron-fast v0.1.3, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0
+
+| Operation    | cron-fast      | croner    | cron-parser | cron-schedule |
+| ------------ | -------------- | --------- | ----------- | ------------- |
+| Next run     | **368k ops/s** | 29k ops/s | 30k ops/s   | 385k ops/s    |
+| Previous run | **368k ops/s** | 29k ops/s | 27k ops/s   | 384k ops/s    |
+| Validation   | **486k ops/s** | 31k ops/s | 89k ops/s   | 452k ops/s    |
+| Parsing      | **541k ops/s** | 32k ops/s | 96k ops/s   | 475k ops/s    |
+
+See [detailed benchmarks and feature comparison](docs/benchmark-comparison.md) for more information.
+
+Run benchmarks yourself: `pnpm benchmark`
 
 ## License
 

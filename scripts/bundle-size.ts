@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Bundle size analysis script
- * 
+ *
  * Usage:
  *   pnpm bundle-size          - Display bundle sizes only
  *   pnpm update-bundle-size   - Display and update README.md
@@ -13,6 +13,10 @@ import { join } from "node:path";
 
 const rootDir = process.cwd();
 const indexPath = join(rootDir, "src/index.ts");
+
+// Get package version
+const packageJson = JSON.parse(readFileSync(join(rootDir, "package.json"), "utf-8"));
+const version = packageJson.version;
 
 const scenarios = [
   {
@@ -133,6 +137,10 @@ function updateReadme(table: string): void {
   const readmePath = join(rootDir, "README.md");
   let readme = readFileSync(readmePath, "utf-8");
 
+  // Update version in the bundle size section header
+  const versionPattern = /\(tested with v[\d.]+\)/;
+  readme = readme.replace(versionPattern, `(tested with v${version})`);
+
   // Find the bundle size table and replace it
   const tableStart = readme.indexOf("| Import");
   const tableEnd = readme.indexOf("\n\nImport only what you need:");
@@ -150,7 +158,8 @@ function updateReadme(table: string): void {
 async function main() {
   const shouldUpdate = process.argv.includes("--update");
 
-  console.log("📦 Analyzing bundle sizes...\n");
+  console.log(`📦 cron-fast v${version} - Bundle Size Analysis\n`);
+  console.log("Analyzing bundle sizes...\n");
 
   const results: BundleResult[] = [];
 
