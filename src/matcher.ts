@@ -20,27 +20,41 @@ export function matches(parsed: ParsedCron, date: Date): boolean {
 }
 
 /**
+ * Check if we're in OR mode (both day and weekday are restricted, not wildcards)
+ * In OR mode, we must check every day because any day might match via weekday
+ */
+export function isOrMode(parsed: ParsedCron): boolean {
+  return !parsed.dayIsWildcard && !parsed.weekdayIsWildcard;
+}
+
+/**
  * Day-of-month and day-of-week use OR logic by default
  * If both are restricted (not *), match either one
+ * 
+ * @param daysInMonth - Optional validation that day is valid for the month (used by scheduler)
  */
-function matchesDayOrWeekday(parsed: ParsedCron, day: number, weekday: number): boolean {
-  const dayMatches = parsed.day.includes(day);
+export function matchesDayOrWeekday(
+  parsed: ParsedCron,
+  day: number,
+  weekday: number,
+  daysInMonth?: number,
+): boolean {
+  const dayMatches =
+    daysInMonth !== undefined
+      ? parsed.day.includes(day) && day <= daysInMonth
+      : parsed.day.includes(day);
   const weekdayMatches = parsed.weekday.includes(weekday);
 
-  // If both are wildcards (all values), both match
-  const dayIsWildcard = parsed.day.length === 31;
-  const weekdayIsWildcard = parsed.weekday.length === 7;
-
   // If both are restricted, use OR logic (standard cron behavior)
-  if (!dayIsWildcard && !weekdayIsWildcard) {
+  if (isOrMode(parsed)) {
     return dayMatches || weekdayMatches;
   }
 
   // If only one is restricted, it must match
-  if (!dayIsWildcard) {
+  if (!parsed.dayIsWildcard) {
     return dayMatches;
   }
-  if (!weekdayIsWildcard) {
+  if (!parsed.weekdayIsWildcard) {
     return weekdayMatches;
   }
 

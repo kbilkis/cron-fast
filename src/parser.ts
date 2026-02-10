@@ -61,6 +61,8 @@ export function parse(expression: string): ParsedCron {
     day: parseField(dayStr, 1, 31),
     month: parseField(monthStr, 1, 12, MONTH_NAMES).map((m) => m - 1), // Convert to 0-indexed (0 = Jan, 11 = Dec)
     weekday: Array.from(new Set(weekdays)).sort((a, b) => a - b), // Dedupe and sort
+    dayIsWildcard: dayStr.trim() === "*",
+    weekdayIsWildcard: weekdayStr.trim() === "*",
   };
 
   // Validate day/month combinations
@@ -75,7 +77,7 @@ export function parse(expression: string): ParsedCron {
  */
 function validateDayMonthCombinations(parsed: ParsedCron): void {
   // If day or month is wildcard, no validation needed
-  const dayIsWildcard = parsed.day.length === 31;
+  const dayIsWildcard = parsed.dayIsWildcard;
   const monthIsWildcard = parsed.month.length === 12;
 
   if (dayIsWildcard || monthIsWildcard) {

@@ -53,7 +53,7 @@ describe("Timezone Edge Cases - Deep Dive", () => {
   });
 
   describe("24:00:00 format handling", () => {
-    it("should handle timezone conversions near midnight (24:00:00 format)", () => {
+    it("should handle timezone conversions near midnight", () => {
       const timezone = "Pacific/Auckland";
       const original = new Date("2026-03-15T00:00:00Z");
 
@@ -80,7 +80,7 @@ describe("Timezone Edge Cases - Deep Dive", () => {
       }
     });
 
-    it("should normalize potential 24:00:00 in convertToTimezone (line 20)", () => {
+    it("should normalize hours in convertToTimezone", () => {
       const timezone = "Asia/Tokyo";
       const utcMidnight = new Date("2026-03-15T00:00:00Z");
 
@@ -90,7 +90,7 @@ describe("Timezone Edge Cases - Deep Dive", () => {
       expect(converted.getUTCHours()).toBeLessThan(24);
     });
 
-    it("should normalize potential 24:00:00 in convertFromTimezone iteration (lines 74, 120)", () => {
+    it("should normalize hours in convertFromTimezone iteration", () => {
       const timezone = "Pacific/Auckland";
       const dates = [
         new Date("2026-03-15T11:00:00Z"),
@@ -137,7 +137,7 @@ describe("Timezone Edge Cases - Deep Dive", () => {
       }
     });
 
-    it("should handle DST gap scenarios (timezone.ts:120)", () => {
+    it("should handle DST gap scenarios", () => {
       const timezone = "America/New_York";
       const beforeDST = new Date("2026-03-08T06:59:59Z");
 

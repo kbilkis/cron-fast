@@ -953,6 +953,125 @@ describe("scheduler", () => {
     });
   });
 
+  describe("Field mismatches and rollovers", () => {
+    describe("OR mode month boundaries", () => {
+      it("should return null in OR mode next when day exceeds daysInMonth", () => {
+        const from = new Date("2026-01-31T23:59:00Z");
+        const next = nextRun("0 0 15 * 1", { from });
+        expect(next.getUTCDate()).toBe(2);
+        expect(next.getUTCMonth()).toBe(1);
+        expect(next.getUTCDay()).toBe(1);
+      });
+
+      it("should return null in OR mode prev when day goes below 1", () => {
+        const from = new Date("2026-02-01T00:01:00Z");
+        const prev = previousRun("0 0 15 * 1", { from });
+        expect(prev.getUTCDate()).toBe(26);
+        expect(prev.getUTCMonth()).toBe(0);
+        expect(prev.getUTCDay()).toBe(1);
+      });
+
+      it("should trigger month rollover in OR mode next", () => {
+        const from = new Date("2026-01-31T10:00:00Z");
+        const next = nextRun("0 9 15 * 1", { from });
+        expect(next.getUTCMonth()).toBe(1);
+      });
+
+      it("should trigger month rollover in OR mode prev", () => {
+        const from = new Date("2026-03-01T08:00:00Z");
+        const prev = previousRun("0 10 15 * 1", { from });
+        expect(prev.getUTCMonth()).toBe(1);
+      });
+
+      it("should handle OR mode crossing month end with next", () => {
+        const from = new Date("2026-04-30T23:59:00Z");
+        const next = nextRun("0 0 * * 1", { from });
+        expect(next.getUTCDate()).toBeGreaterThan(0);
+      });
+
+      it("should handle OR mode crossing month start with prev", () => {
+        const from = new Date("2026-05-01T00:01:00Z");
+        const prev = previousRun("0 0 * * 1", { from });
+        expect(prev.getUTCDate()).toBeGreaterThan(0);
+      });
+    });
+
+    describe("field match but advance needed", () => {
+      it("should call moveToDay when matches returns false despite matching fields", () => {
+        const from = new Date("2026-03-15T09:00:00Z");
+        const next = nextRun("0 9 15 * *", { from });
+        expect(next.getTime()).toBeGreaterThan(from.getTime());
+      });
+    });
+
+    describe("minute field mismatch", () => {
+      it("should set valid minute in same hour for next direction", () => {
+        const from = new Date("2026-03-15T10:05:00Z");
+        const next = nextRun("15,30,45 10 * * *", { from });
+        expect(next.getUTCMinutes()).toBe(15);
+        expect(next.getUTCHours()).toBe(10);
+      });
+
+      it("should set valid minute in same hour for prev direction", () => {
+        const from = new Date("2026-03-15T10:35:00Z");
+        const prev = previousRun("0,15,30 10 * * *", { from });
+        expect(prev.getUTCMinutes()).toBe(30);
+        expect(prev.getUTCHours()).toBe(10);
+      });
+    });
+
+    describe("hour field mismatch", () => {
+      it("should set hours and minutes when valid hour found in same day", () => {
+        const from = new Date("2026-03-15T08:30:00Z");
+        const next = nextRun("0 10,14 * * *", { from });
+        expect(next.getUTCHours()).toBe(10);
+        expect(next.getUTCMinutes()).toBe(0);
+      });
+
+      it("should set hours and minutes for prev direction", () => {
+        const from = new Date("2026-03-15T20:30:00Z");
+        const prev = previousRun("0 10,14 * * *", { from });
+        expect(prev.getUTCHours()).toBe(14);
+        expect(prev.getUTCMinutes()).toBe(0);
+      });
+    });
+
+    describe("day field mismatch", () => {
+      it("should moveToDay when day mismatch but month matches", () => {
+        const from = new Date("2026-03-10T10:00:00Z");
+        const next = nextRun("0 9 15 * *", { from });
+        expect(next.getUTCDate()).toBe(15);
+      });
+
+      it("should moveToDay when weekday mismatch", () => {
+        const from = new Date("2026-03-11T10:00:00Z");
+        const next = nextRun("0 9 * * 1", { from });
+        expect(next.getUTCDay()).toBe(1);
+      });
+
+      it("should moveToDay in prev direction when day mismatch", () => {
+        const from = new Date("2026-03-20T08:00:00Z");
+        const prev = previousRun("0 9 15 * *", { from });
+        expect(prev.getUTCDate()).toBe(15);
+      });
+    });
+
+    describe("without timezone option", () => {
+      it("should return date directly when no timezone specified", () => {
+        const from = new Date("2026-03-15T10:30:00Z");
+        const next = nextRun("0 15 * * *", { from });
+        expect(next.getUTCHours()).toBe(15);
+        expect(next.getUTCMinutes()).toBe(0);
+      });
+
+      it("should work with previousRun without timezone", () => {
+        const from = new Date("2026-03-15T15:30:00Z");
+        const prev = previousRun("0 9 * * *", { from });
+        expect(prev.getUTCHours()).toBe(9);
+      });
+    });
+  });
+
   describe("Edge case coverage", () => {
     describe("minute rollover to next hour (scheduler.ts:160-161)", () => {
       it("should rollover to next hour when no valid minute exists in current hour", () => {
@@ -1095,13 +1214,45 @@ describe("scheduler", () => {
     describe("MAX_ITERATIONS safety (lines 93-94)", () => {
       it("should find matches efficiently without hitting iteration limit", () => {
         const from = new Date("2026-01-01T00:00:00Z");
+        // "0 0 29 2 1" means: midnight on (Feb 29 OR Monday in Feb)
+        // Standard cron uses OR logic when both day and weekday are specified
+        // Next match: 2026-02-02 (first Monday in Feb after start date)
         const sparseCron = "0 0 29 2 1";
 
         const next = nextRun(sparseCron, { from });
 
-        expect(next.getUTCDate()).toBe(29);
-        expect(next.getUTCMonth()).toBe(1);
-        expect(next.getUTCFullYear()).toBe(2028);
+        expect(next.getUTCDate()).toBe(2);
+        expect(next.getUTCMonth()).toBe(1); // February
+        expect(next.getUTCFullYear()).toBe(2026);
+        expect(next.getUTCDay()).toBe(1); // Monday
+      });
+
+      it("should handle OR logic in prev direction (day 29 OR Monday)", () => {
+        const from = new Date("2028-03-01T00:00:00Z");
+        // "0 0 29 2 1" means: midnight on (Feb 29 OR Monday in Feb)
+        // Previous match should be Feb 29, 2028 (Tuesday, but matches day 29)
+        const sparseCron = "0 0 29 2 1";
+
+        const prev = previousRun(sparseCron, { from });
+
+        expect(prev.getUTCDate()).toBe(29);
+        expect(prev.getUTCMonth()).toBe(1); // February
+        expect(prev.getUTCFullYear()).toBe(2028);
+      });
+
+      it("should handle OR logic in prev direction crossing month boundary", () => {
+        // Start from Feb 1, go backwards with OR logic
+        const from = new Date("2026-02-01T00:00:00Z");
+        // "0 0 29 2 1" means: midnight on (Feb 29 OR Monday in Feb)
+        // Previous match should be in February 2025 (last Monday)
+        const sparseCron = "0 0 29 2 1";
+
+        const prev = previousRun(sparseCron, { from });
+
+        // Should find last Monday in February 2025
+        expect(prev.getUTCMonth()).toBe(1); // February
+        expect(prev.getUTCFullYear()).toBe(2025);
+        expect(prev.getUTCDay()).toBe(1); // Monday
       });
 
       it("should handle sparse cron expressions within iteration limit", () => {
@@ -1111,6 +1262,101 @@ describe("scheduler", () => {
         expect(next.getUTCDate()).toBe(31);
         expect(next.getUTCMonth()).toBe(11);
         expect(next.getUTCFullYear()).toBe(2026);
+      });
+    });
+
+    describe("Day and weekday OR logic", () => {
+      it("should match only day when weekday is wildcard (0 0 15 * *)", () => {
+        // Day 15, weekday wildcard - should match ONLY day 15
+        const cron = "0 0 15 * *";
+        const feb15 = new Date("2026-02-15T00:00:00Z"); // Sunday, day 15
+        const feb16 = new Date("2026-02-16T00:00:00Z"); // Monday, day 16
+
+        expect(isMatch(cron, feb15)).toBe(true); // Matches day 15
+        expect(isMatch(cron, feb16)).toBe(false); // Doesn't match (not day 15)
+      });
+
+      it("should match only weekday when day is wildcard (0 0 * * 1)", () => {
+        // Day wildcard, Monday - should match ONLY Mondays
+        const cron = "0 0 * * 1";
+        const feb15 = new Date("2026-02-15T00:00:00Z"); // Sunday, day 15
+        const feb16 = new Date("2026-02-16T00:00:00Z"); // Monday, day 16
+
+        expect(isMatch(cron, feb15)).toBe(false); // Doesn't match (not Monday)
+        expect(isMatch(cron, feb16)).toBe(true); // Matches Monday
+      });
+
+      it("should use OR logic when both day and weekday are restricted (0 0 15 * 1)", () => {
+        // Day 15 OR Monday - should match either condition
+        const cron = "0 0 15 * 1";
+        const feb15 = new Date("2026-02-15T00:00:00Z"); // Sunday, day 15
+        const feb16 = new Date("2026-02-16T00:00:00Z"); // Monday, day 16
+        const feb17 = new Date("2026-02-17T00:00:00Z"); // Tuesday, day 17
+
+        expect(isMatch(cron, feb15)).toBe(true); // Matches day 15 (even though not Monday)
+        expect(isMatch(cron, feb16)).toBe(true); // Matches Monday (even though not day 15)
+        expect(isMatch(cron, feb17)).toBe(false); // Doesn't match (neither day 15 nor Monday)
+      });
+
+      it("should find next occurrence with day-only restriction", () => {
+        // Day 15, weekday wildcard - should find next day 15
+        const from = new Date("2026-02-01T00:00:00Z");
+        const next = nextRun("0 0 15 * *", { from });
+
+        expect(next.getUTCDate()).toBe(15);
+        expect(next.getUTCMonth()).toBe(1); // February
+        expect(next.getUTCFullYear()).toBe(2026);
+      });
+
+      it("should find next occurrence with weekday-only restriction", () => {
+        // Day wildcard, Monday - should find next Monday
+        const from = new Date("2026-02-15T00:00:00Z"); // Sunday
+        const next = nextRun("0 0 * * 1", { from });
+
+        expect(next.getUTCDay()).toBe(1); // Monday
+        expect(next.getUTCDate()).toBe(16);
+        expect(next.getUTCMonth()).toBe(1); // February
+      });
+
+      it("should find next occurrence with OR logic (day 15 OR Monday)", () => {
+        // Day 15 OR Monday - should find next occurrence of either
+        const from = new Date("2026-02-14T00:00:00Z"); // Saturday, day 14
+        const next = nextRun("0 0 15 * 1", { from });
+
+        // Next match is Feb 15 (Sunday, day 15) - matches day condition
+        expect(next.getUTCDate()).toBe(15);
+        expect(next.getUTCMonth()).toBe(1); // February
+        expect(next.getUTCFullYear()).toBe(2026);
+      });
+
+      it("should find multiple occurrences with OR logic", () => {
+        // Day 15 OR Monday - get next 5 occurrences
+        const from = new Date("2026-02-01T00:00:00Z");
+        const runs = nextRuns("0 0 15 * 1", 5, { from });
+
+        // Should get: Feb 2 (Mon), Feb 9 (Mon), Feb 15 (Sun, day 15), Feb 16 (Mon), Feb 23 (Mon)
+        expect(runs[0].toDateString()).toBe("Mon Feb 02 2026");
+        expect(runs[1].toDateString()).toBe("Mon Feb 09 2026");
+        expect(runs[2].toDateString()).toBe("Sun Feb 15 2026"); // Day 15
+        expect(runs[3].toDateString()).toBe("Mon Feb 16 2026");
+        expect(runs[4].toDateString()).toBe("Mon Feb 23 2026");
+      });
+
+      it("should treat explicit all weekdays (0-6) as restricted, not wildcard", () => {
+        // Day 15, weekdays 0-6 (all days explicitly listed)
+        // According to cron standard: * is wildcard, but 0-6 is restricted
+        // When both day and weekday are restricted, use OR logic
+        // Result: day 15 OR (Sun OR Mon OR ... OR Sat) = matches every day
+        const cron = "0 0 15 * 0-6";
+        const feb15 = new Date("2026-02-15T00:00:00Z"); // Sunday, day 15
+        const feb16 = new Date("2026-02-16T00:00:00Z"); // Monday, day 16
+
+        // Feb 15: matches day 15 OR weekday (Sunday is in 0-6) = true
+        expect(isMatch(cron, feb15)).toBe(true);
+
+        // Feb 16: doesn't match day 15, but matches weekday (Monday is in 0-6) = true
+        // This is the key difference from wildcard behavior
+        expect(isMatch(cron, feb16)).toBe(true);
       });
     });
   });

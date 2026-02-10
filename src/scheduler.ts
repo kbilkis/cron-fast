@@ -1,6 +1,13 @@
 import type { ParsedCron, CronOptions } from "./types.js";
 import { parse } from "./parser.js";
-import { matches, findNext, findPrevious, getDaysInMonth } from "./matcher.js";
+import {
+  matches,
+  findNext,
+  findPrevious,
+  getDaysInMonth,
+  isOrMode,
+  matchesDayOrWeekday,
+} from "./matcher.js";
 import { convertToTimezone, convertFromTimezone } from "./timezone.js";
 
 const MAX_ITERATIONS = 1000;
@@ -119,6 +126,7 @@ function advanceDate(parsed: ParsedCron, date: Date, dir: Direction): void {
   const day = date.getUTCDate();
   const month = date.getUTCMonth();
   const year = date.getUTCFullYear();
+  const weekday = date.getUTCDay();
   const daysInMonth = getDaysInMonth(year, month);
 
   // Month mismatch
@@ -127,8 +135,8 @@ function advanceDate(parsed: ParsedCron, date: Date, dir: Direction): void {
     return;
   }
 
-  // Day mismatch
-  if (!parsed.day.includes(day) || day > daysInMonth) {
+  // Day/Weekday mismatch - use OR logic like matches()
+  if (!matchesDayOrWeekday(parsed, day, weekday, daysInMonth)) {
     moveToDay(parsed, date, dir, day, month, year, daysInMonth);
     return;
   }
@@ -167,8 +175,9 @@ function advanceDate(parsed: ParsedCron, date: Date, dir: Direction): void {
     return;
   }
 
-  // Weekday mismatch: all fields match but wrong day-of-week.
-  // Skip directly to next/prev day since no hour/minute on this day can match.
+  // All fields match but we still need to advance (called from findMatch loop)
+  // This happens when matches() returns false due to day/weekday mismatch
+  // Move to next/prev day
   moveToDay(parsed, date, dir, day, month, year, daysInMonth);
 }
 
@@ -190,6 +199,37 @@ function moveToMonth(
   }
 }
 
+/**
+ * Find the next candidate day to check
+ * In OR mode: advance by 1 day (must check every day)
+ * Normal mode: jump to next valid day-of-month
+ */
+function findCandidateDay(
+  parsed: ParsedCron,
+  currentDay: number,
+  dir: Direction,
+  daysInMonth: number,
+): number | null {
+  const d = DIR[dir];
+  const inOrMode = isOrMode(parsed);
+
+  if (inOrMode) {
+    // In OR mode, we must check every day (can't skip ahead)
+    // because any day might match via weekday even if day-of-month doesn't match
+    const targetDay = currentDay + d.offset;
+    if (dir === "next" && targetDay > daysInMonth) {
+      return null;
+    }
+    if (dir === "prev" && targetDay < 1) {
+      return null;
+    }
+    return targetDay;
+  }
+
+  // Normal mode: jump to next valid day-of-month
+  return d.find(parsed.day, currentDay + d.offset);
+}
+
 function moveToDay(
   parsed: ParsedCron,
   date: Date,
@@ -200,7 +240,7 @@ function moveToDay(
   daysInMonth: number,
 ): void {
   const d = DIR[dir];
-  const targetDay = d.find(parsed.day, currentDay + d.offset);
+  const targetDay = findCandidateDay(parsed, currentDay, dir, daysInMonth);
   const dayIsValid =
     dir === "next" ? targetDay !== null && targetDay <= daysInMonth : targetDay !== null;
 
@@ -227,18 +267,22 @@ function resetToMonthBoundary(
 
   const daysInMonth = getDaysInMonth(year, month);
 
+  // Check if we're in OR mode (both day and weekday restricted)
+  const inOrMode = isOrMode(parsed);
+
   if (dir === "next") {
-    const validDay = findNext(parsed.day, 1);
-    date.setUTCDate(validDay !== null && validDay <= daysInMonth ? validDay : parsed.day[0]);
+    // In OR mode: start from day 1. Normal mode: jump to first valid day
+    const startDay = inOrMode ? 1 : (findNext(parsed.day, 1) ?? parsed.day[0]);
+    date.setUTCDate(Math.min(startDay, daysInMonth));
   } else {
-    const prevDay = findPrevious(parsed.day, daysInMonth);
-    if (prevDay !== null) {
-      date.setUTCDate(prevDay);
-    } else {
+    // In OR mode: start from last day. Normal mode: jump to last valid day
+    const startDay = inOrMode ? daysInMonth : findPrevious(parsed.day, daysInMonth);
+    if (startDay === null) {
       // No valid day in this month, move to previous month
       moveToMonth(parsed, date, dir, month, year);
       return;
     }
+    date.setUTCDate(startDay);
   }
 
   date.setUTCHours(d.hour(parsed));
