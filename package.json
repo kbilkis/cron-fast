@@ -97,7 +97,7 @@
     "*.{ts,js,json,md}": "oxfmt"
   },
   "engines": {
-    "node": ">=18.12.0"
+    "node": ">=20.0.0"
   },
   "packageManager": "pnpm@10.29.2"
 }

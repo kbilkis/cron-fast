@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [18, 20, 22, 24]
+        node: [20, 22, 24]
     steps:
       - uses: actions/checkout@v6
 
@@ -42,7 +42,6 @@ jobs:
         run: pnpm run test
 
       - name: Build
-        if: matrix.node >= 20
         run: pnpm run build
 
   # Test with Deno
