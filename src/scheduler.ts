@@ -31,37 +31,41 @@ const DIR = {
   },
 } as const;
 
-/** Get the next execution time for a cron expression */
-export function nextRun(expression: string, options?: CronOptions): Date {
+/** Get the next execution time for a cron expression. Returns null if invalid or no match found. */
+export function nextRun(expression: string, options?: CronOptions): Date | null {
   const parsed = parse(expression);
+  if (!parsed) return null;
+
   const from = options?.from || new Date();
   const tz = options?.timezone;
 
-  const start = tz ? convertToTimezone(from, tz) : new Date(from);
+  const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
+  if (!start) return null;
+
   start.setUTCSeconds(0, 0);
   start.setUTCMinutes(start.getUTCMinutes() + 1);
 
-  const result = findMatch(parsed, start, "next", tz);
-  if (!result) throw new Error("No matching time found within reasonable search window");
-  return result;
+  return findMatch(parsed, start, "next", tz);
 }
 
-/** Get the previous execution time for a cron expression */
-export function previousRun(expression: string, options?: CronOptions): Date {
+/** Get the previous execution time for a cron expression. Returns null if invalid or no match found. */
+export function previousRun(expression: string, options?: CronOptions): Date | null {
   const parsed = parse(expression);
+  if (!parsed) return null;
+
   const from = options?.from || new Date();
   const tz = options?.timezone;
 
-  const start = tz ? convertToTimezone(from, tz) : new Date(from);
+  const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
+  if (!start) return null;
+
   start.setUTCSeconds(0, 0);
   start.setUTCMinutes(start.getUTCMinutes() - 1);
 
-  const result = findMatch(parsed, start, "prev", tz);
-  if (!result) throw new Error("No matching time found within reasonable search window");
-  return result;
+  return findMatch(parsed, start, "prev", tz);
 }
 
-/** Get next N execution times */
+/** Get next N execution times. Returns empty array if invalid. */
 export function nextRuns(expression: string, count: number, options?: CronOptions): Date[] {
   if (count <= 0) return [];
 
@@ -70,20 +74,26 @@ export function nextRuns(expression: string, count: number, options?: CronOption
 
   for (let i = 0; i < count; i++) {
     const next = nextRun(expression, { ...options, from: current });
+    if (!next) break;
     results.push(next);
     current = new Date(next.getTime() + ONE_MINUTE_MS);
   }
   return results;
 }
 
-/** Check if a date matches the cron expression */
+/** Check if a date matches the cron expression. Returns false if invalid. */
 export function isMatch(
   expression: string,
   date: Date,
   options?: Pick<CronOptions, "timezone">,
 ): boolean {
   const parsed = parse(expression);
-  const checkDate = options?.timezone ? convertToTimezone(date, options.timezone) : new Date(date);
+  if (!parsed) return false;
+
+  const checkDate =
+    options?.timezone !== undefined ? convertToTimezone(date, options.timezone) : new Date(date);
+
+  if (!checkDate) return false;
   return matches(parsed, checkDate);
 }
 
@@ -93,7 +103,7 @@ function findMatch(parsed: ParsedCron, start: Date, dir: Direction, tz?: string)
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     if (matches(parsed, current)) {
-      return tz ? convertFromTimezone(current, tz) : current;
+      return tz !== undefined ? convertFromTimezone(current, tz) : current;
     }
     advanceDate(parsed, current, dir);
   }
@@ -217,12 +227,8 @@ function findCandidateDay(
     // In OR mode, we must check every day (can't skip ahead)
     // because any day might match via weekday even if day-of-month doesn't match
     const targetDay = currentDay + d.offset;
-    if (dir === "next" && targetDay > daysInMonth) {
-      return null;
-    }
-    if (dir === "prev" && targetDay < 1) {
-      return null;
-    }
+    if (dir === "next" && targetDay > daysInMonth) return null;
+    if (dir === "prev" && targetDay < 1) return null;
     return targetDay;
   }
 

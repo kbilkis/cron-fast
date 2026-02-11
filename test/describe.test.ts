@@ -374,25 +374,13 @@ describe("describe", () => {
     expect(describeCron("0 0 29 2 *")).toBe("At 12:00 AM, on the 29th in February");
   });
 
-  it("should reject impossible date combinations", () => {
-    expect(() => describeCron("0 0 31 2 *")).toThrow(
-      "Invalid cron expression: no valid day/month combination exists",
-    );
-    expect(() => describeCron("0 0 30 2 *")).toThrow(
-      "Invalid cron expression: no valid day/month combination exists",
-    );
-    expect(() => describeCron("0 0 31 4 *")).toThrow(
-      "Invalid cron expression: no valid day/month combination exists",
-    );
-    expect(() => describeCron("0 0 31 6 *")).toThrow(
-      "Invalid cron expression: no valid day/month combination exists",
-    );
-    expect(() => describeCron("0 0 31 9 *")).toThrow(
-      "Invalid cron expression: no valid day/month combination exists",
-    );
-    expect(() => describeCron("0 0 31 11 *")).toThrow(
-      "Invalid cron expression: no valid day/month combination exists",
-    );
+  it("should return empty string for impossible date combinations", () => {
+    expect(describeCron("0 0 31 2 *")).toBe("");
+    expect(describeCron("0 0 30 2 *")).toBe("");
+    expect(describeCron("0 0 31 4 *")).toBe("");
+    expect(describeCron("0 0 31 6 *")).toBe("");
+    expect(describeCron("0 0 31 9 *")).toBe("");
+    expect(describeCron("0 0 31 11 *")).toBe("");
   });
 
   // ==========================================================================

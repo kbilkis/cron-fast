@@ -29,10 +29,12 @@ const WEEKDAY_NAMES = [
 const ORDINAL_SUFFIXES = ["th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"] as const;
 
 /**
- * Generate a human-readable description of a cron expression
+ * Generate a human-readable description of a cron expression.
+ * Returns empty string if the expression is invalid.
  */
 export function describe(expression: string): string {
-  const parsed: ParsedCron = parse(expression);
+  const parsed = parse(expression);
+  if (!parsed) return "";
 
   const parts: string[] = [];
 

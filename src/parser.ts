@@ -38,77 +38,66 @@ const WEEKDAY_NAMES: Record<string, number> = {
  * Note: Months are converted from cron's 1-indexed format (1-12) to
  * JavaScript's 0-indexed format (0-11) for internal consistency.
  */
-export function parse(expression: string): ParsedCron {
+export function parse(expression: string): ParsedCron | null {
   const trimmed = expression.trim();
-
-  if (!trimmed) {
-    throw new Error("Cron expression cannot be empty");
-  }
+  if (!trimmed) return null;
 
   const parts = trimmed.split(/\s+/);
-
-  if (parts.length !== 5) {
-    throw new Error(`Invalid cron expression: expected 5 fields, got ${parts.length}`);
-  }
+  if (parts.length !== 5) return null;
 
   const [minuteStr, hourStr, dayStr, monthStr, weekdayStr] = parts;
 
-  const weekdays = parseField(weekdayStr, 0, 7, WEEKDAY_NAMES).map((d) => (d === 7 ? 0 : d));
+  const minute = parseField(minuteStr, 0, 59);
+  if (!minute) return null;
+
+  const hour = parseField(hourStr, 0, 23);
+  if (!hour) return null;
+
+  const day = parseField(dayStr, 1, 31);
+  if (!day) return null;
+
+  const month = parseField(monthStr, 1, 12, MONTH_NAMES);
+  if (!month) return null;
+
+  const weekdayRaw = parseField(weekdayStr, 0, 7, WEEKDAY_NAMES);
+  if (!weekdayRaw) return null;
+
+  const weekdays = weekdayRaw.map((d) => (d === 7 ? 0 : d));
 
   const parsed: ParsedCron = {
-    minute: parseField(minuteStr, 0, 59),
-    hour: parseField(hourStr, 0, 23),
-    day: parseField(dayStr, 1, 31),
-    month: parseField(monthStr, 1, 12, MONTH_NAMES).map((m) => m - 1), // Convert to 0-indexed (0 = Jan, 11 = Dec)
-    weekday: Array.from(new Set(weekdays)).sort((a, b) => a - b), // Dedupe and sort
+    minute,
+    hour,
+    day,
+    month: month.map((m) => m - 1),
+    weekday: Array.from(new Set(weekdays)).sort((a, b) => a - b),
     dayIsWildcard: dayStr.trim() === "*",
     weekdayIsWildcard: weekdayStr.trim() === "*",
   };
 
-  // Validate day/month combinations
-  validateDayMonthCombinations(parsed);
+  if (!hasValidDayMonthCombinations(parsed)) return null;
 
   return parsed;
 }
 
 /**
- * Validate that day/month combinations are possible
- * Rejects expressions like "0 0 31 2 *" (Feb 31) or "0 0 30 2 *" (Feb 30)
+ * Check if day/month combinations are possible.
+ * Returns false for expressions like "0 0 31 2 *" (Feb 31).
  */
-function validateDayMonthCombinations(parsed: ParsedCron): void {
-  // If day or month is wildcard, no validation needed
-  const dayIsWildcard = parsed.dayIsWildcard;
-  const monthIsWildcard = parsed.month.length === 12;
-
-  if (dayIsWildcard || monthIsWildcard) {
-    return;
-  }
+function hasValidDayMonthCombinations(parsed: ParsedCron): boolean {
+  if (parsed.dayIsWildcard || parsed.month.length === 12) return true;
 
   // Days in each month (0-indexed: 0=Jan, 11=Dec)
   // February can have 29 days in leap years
   const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-  // Check if any specified month can accommodate any specified day
-  let hasValidCombination = false;
-
   for (const month of parsed.month) {
-    const maxDaysInMonth = daysInMonth[month];
-
+    const maxDays = daysInMonth[month];
     for (const day of parsed.day) {
-      if (day <= maxDaysInMonth) {
-        hasValidCombination = true;
-        break;
-      }
-    }
-
-    if (hasValidCombination) {
-      break;
+      if (day <= maxDays) return true;
     }
   }
 
-  if (!hasValidCombination) {
-    throw new Error(`Invalid cron expression: no valid day/month combination exists`);
-  }
+  return false;
 }
 
 /**
@@ -119,109 +108,85 @@ function parseField(
   min: number,
   max: number,
   names?: Record<string, number>,
-): number[] {
+): number[] | null {
   const values = new Set<number>();
 
-  // Handle wildcard
   if (field === "*") {
-    for (let i = min; i <= max; i++) {
-      values.add(i);
-    }
+    for (let i = min; i <= max; i++) values.add(i);
     return Array.from(values).sort((a, b) => a - b);
   }
 
-  // Split by comma for multiple values
   const parts = field.split(",");
 
   for (const part of parts) {
-    // Handle step values (e.g., star-slash-5 or 10-20/2)
+    // Handle step values (e.g., */5 or 10-20/2)
     if (part.includes("/")) {
       const [range, stepStr] = part.split("/");
       const step = parseInt(stepStr, 10);
-
-      if (isNaN(step) || step <= 0) {
-        throw new Error(`Invalid step value: ${stepStr}`);
-      }
+      if (isNaN(step) || step <= 0) return null;
 
       let start = min;
       let end = max;
 
       if (range !== "*") {
         if (range.includes("-")) {
-          const [startStr, endStr] = range.split("-");
-          start = parseValue(startStr, names);
-          end = parseValue(endStr, names);
+          const rangeParts = range.split("-");
+          if (rangeParts.length > 2) return null;
+          const startVal = parseValue(rangeParts[0], names);
+          const endVal = parseValue(rangeParts[1], names);
+          if (startVal === null || endVal === null) return null;
+          start = startVal;
+          end = endVal;
         } else {
-          start = parseValue(range, names);
+          const v = parseValue(range, names);
+          if (v === null) return null;
+          start = v;
         }
       }
 
       for (let i = start; i <= end; i += step) {
-        if (i >= min && i <= max) {
-          values.add(i);
-        }
+        if (i >= min && i <= max) values.add(i);
       }
     }
     // Handle ranges (e.g., 1-5)
     else if (part.includes("-")) {
-      const [startStr, endStr] = part.split("-");
-      const start = parseValue(startStr, names);
-      const end = parseValue(endStr, names);
+      const rangeParts = part.split("-");
+      if (rangeParts.length > 2) return null;
 
-      if (start > end) {
-        throw new Error(`Invalid range: ${part}`);
-      }
+      const start = parseValue(rangeParts[0], names);
+      const end = parseValue(rangeParts[1], names);
+      if (start === null || end === null) return null;
+      if (start > end) return null;
 
       for (let i = start; i <= end; i++) {
-        if (i >= min && i <= max) {
-          values.add(i);
-        }
+        if (i >= min && i <= max) values.add(i);
       }
     }
     // Handle single values
     else {
       const value = parseValue(part, names);
-      if (value >= min && value <= max) {
-        values.add(value);
-      } else {
-        throw new Error(`Value ${value} out of range [${min}-${max}]`);
-      }
+      if (value === null) return null;
+      if (value < min || value > max) return null;
+      values.add(value);
     }
   }
 
-  if (values.size === 0) {
-    throw new Error(`No valid values in field: ${field}`);
-  }
-
+  if (values.size === 0) return null;
   return Array.from(values).sort((a, b) => a - b);
 }
 
 /**
  * Parse a single value (number or name)
  */
-function parseValue(value: string, names?: Record<string, number>): number {
+function parseValue(value: string, names?: Record<string, number>): number | null {
   const lower = value.toLowerCase();
-
-  if (names && lower in names) {
-    return names[lower];
-  }
+  if (names && lower in names) return names[lower];
 
   const num = parseInt(value, 10);
-  if (isNaN(num)) {
-    throw new Error(`Invalid value: ${value}`);
-  }
-
-  return num;
+  return isNaN(num) ? null : num;
 }
 
-/**
- * Validate a cron expression
- */
+/** Validate a cron expression */
 export function isValid(expression: string): boolean {
-  try {
-    parse(expression);
-    return true;
-  } catch {
-    return false;
-  }
+  return parse(expression) !== null;
 }

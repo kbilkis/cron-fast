@@ -1,6 +1,17 @@
-/** Convert a UTC date to wall-clock time in the target timezone */
-export function convertToTimezone(date: Date, timezone: string): Date {
-  // Format the date in the target timezone
+function isValidTimezone(timezone: string): boolean {
+  if (typeof timezone !== "string" || !timezone.trim()) return false;
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Convert a UTC date to wall-clock time in the target timezone. Returns null if timezone is invalid. */
+export function convertToTimezone(date: Date, timezone: string): Date | null {
+  if (!isValidTimezone(timezone)) return null;
+
   const str = date.toLocaleString("en-US", {
     timeZone: timezone,
     year: "numeric",
@@ -24,27 +35,23 @@ export function convertToTimezone(date: Date, timezone: string): Date {
 
 /**
  * Convert a timezone-local date back to UTC (inverse of convertToTimezone).
+ * Returns null if timezone is invalid.
  *
  * Note: During DST fall-back, multiple UTC times map to the same wall-clock time.
  * The result is implementation-defined. Avoid scheduling during DST transition hours
  * for predictable behavior.
  */
-export function convertFromTimezone(date: Date, timezone: string): Date {
-  const targetYear = date.getUTCFullYear();
-  const targetMonth = date.getUTCMonth();
-  const targetDay = date.getUTCDate();
-  const targetHour = date.getUTCHours();
-  const targetMinute = date.getUTCMinutes();
-  const targetSecond = date.getUTCSeconds();
+export function convertFromTimezone(date: Date, timezone: string): Date | null {
+  if (!isValidTimezone(timezone)) return null;
 
   // Target time as a comparable number (for checking if we found it)
   const targetTime = Date.UTC(
-    targetYear,
-    targetMonth,
-    targetDay,
-    targetHour,
-    targetMinute,
-    targetSecond,
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
   );
 
   // Start with a guess: interpret the wall-clock time as UTC
@@ -82,27 +89,22 @@ export function convertFromTimezone(date: Date, timezone: string): Date {
       bestGuess = guess;
     }
 
-    // If we got what we wanted, we're done!
     // Note: During DST fall-back, two UTC times map to the same wall-clock time.
     // This returns whichever solution the iteration converges to first (implementation-defined).
-    if (gotTime === targetTime) {
-      return new Date(guess);
-    }
+    if (gotTime === targetTime) return new Date(guess);
 
     // Otherwise, adjust the guess by the difference
-    const adjustment = targetTime - gotTime;
-    guess += adjustment;
+    guess += targetTime - gotTime;
   }
 
   // If we didn't find an exact match after 3 iterations, we're likely in a DST gap
   // (e.g., 2:30 AM during spring forward doesn't exist)
   // Try one more time: check if adding 1 hour to the target gets us closer
-  const oneHourLater = targetTime + 60 * 60 * 1000;
+  const oneHourLater = targetTime + 3600000;
   let guessLater = oneHourLater;
 
   for (let i = 0; i < 2; i++) {
-    const testDate = new Date(guessLater);
-    const testStr = testDate.toLocaleString("en-US", {
+    const testStr = new Date(guessLater).toLocaleString("en-US", {
       timeZone: timezone,
       year: "numeric",
       month: "2-digit",
@@ -125,9 +127,7 @@ export function convertFromTimezone(date: Date, timezone: string): Date {
       // Target time was in a DST gap, return the time after the gap
       return new Date(guessLater);
     }
-
-    const adjustment = oneHourLater - gotTime;
-    guessLater += adjustment;
+    guessLater += oneHourLater - gotTime;
   }
 
   // Return the best guess we found

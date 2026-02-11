@@ -176,16 +176,16 @@ cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 21.39 KB | 9.55 KB  | **3.52 KB** |
-| `nextRun only                                        ` | 12.64 KB | 5.43 KB  | **2.12 KB** |
-| `previousRun only                                    ` | 12.65 KB | 5.43 KB  | **2.12 KB** |
-| `nextRuns only                                       ` | 13.03 KB | 5.58 KB  | **2.18 KB** |
-| `isValid only                                        ` | 4.00 KB  | 1.81 KB  | **951 B**   |
-| `parse only                                          ` | 3.89 KB  | 1.76 KB  | **926 B**   |
-| `describe only                                       ` | 11.04 KB | 5.11 KB  | **2.06 KB** |
-| `isMatch only                                        ` | 5.59 KB  | 2.54 KB  | **1.22 KB** |
-| `Validation only (isValid + parse)                   ` | 4.01 KB  | 1.81 KB  | **952 B**   |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.52 KB | 5.83 KB  | **2.20 KB** |
+| `Full bundle (all exports)                           ` | 21.09 KB | 9.52 KB  | **3.46 KB** |
+| `nextRun only                                        ` | 12.32 KB | 5.41 KB  | **2.05 KB** |
+| `previousRun only                                    ` | 12.33 KB | 5.41 KB  | **2.05 KB** |
+| `nextRuns only                                       ` | 12.73 KB | 5.58 KB  | **2.12 KB** |
+| `isValid only                                        ` | 3.71 KB  | 1.69 KB  | **843 B**   |
+| `parse only                                          ` | 3.64 KB  | 1.66 KB  | **830 B**   |
+| `describe only                                       ` | 10.82 KB | 5.02 KB  | **1.98 KB** |
+| `isMatch only                                        ` | 5.68 KB  | 2.62 KB  | **1.20 KB** |
+| `Validation only (isValid + parse)                   ` | 3.72 KB  | 1.69 KB  | **844 B**   |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.17 KB | 5.78 KB  | **2.14 KB** |
 
 Import only what you need:
 
@@ -278,10 +278,10 @@ cron-fast is designed for speed and efficiency. Here's how it compares to popula
 
 | Operation    | cron-fast      | croner    | cron-parser | cron-schedule |
 | ------------ | -------------- | --------- | ----------- | ------------- |
-| Next run     | **354k ops/s** | 29k ops/s | 29k ops/s   | 387k ops/s    |
-| Previous run | **353k ops/s** | 29k ops/s | 25k ops/s   | 343k ops/s    |
-| Validation   | **545k ops/s** | 33k ops/s | 94k ops/s   | 473k ops/s    |
-| Parsing      | **517k ops/s** | 32k ops/s | 93k ops/s   | 465k ops/s    |
+| Next run     | **371k ops/s** | 30k ops/s | 29k ops/s   | 391k ops/s    |
+| Previous run | **368k ops/s** | 29k ops/s | 27k ops/s   | 364k ops/s    |
+| Validation   | **539k ops/s** | 32k ops/s | 91k ops/s   | 453k ops/s    |
+| Parsing      | **533k ops/s** | 33k ops/s | 92k ops/s   | 440k ops/s    |
 
 See [detailed benchmarks and feature comparison](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 

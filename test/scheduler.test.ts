@@ -1360,4 +1360,46 @@ describe("scheduler", () => {
       });
     });
   });
+
+  describe("Error handling", () => {
+    describe("nextRuns edge cases", () => {
+      it("should return empty array for zero count", () => {
+        const runs = nextRuns("* * * * *", 0);
+        expect(runs).toHaveLength(0);
+      });
+
+      it("should return empty array for negative count", () => {
+        const runs = nextRuns("* * * * *", -1);
+        expect(runs).toHaveLength(0);
+      });
+
+      it("should handle floating point count (truncated by loop)", () => {
+        const runs = nextRuns("* * * * *", 2.5 as number);
+        // for loop runs for i=0,1,2 (3 times) since 2 < 2.5 but 3 > 2.5
+        expect(runs).toHaveLength(3);
+      });
+    });
+
+    describe("invalid timezone", () => {
+      it("should return null for invalid timezone in nextRun", () => {
+        const from = new Date("2026-03-15T14:00:00Z");
+        expect(nextRun("0 9 * * *", { from, timezone: "Invalid/Timezone" })).toBeNull();
+      });
+
+      it("should return null for invalid timezone in previousRun", () => {
+        const from = new Date("2026-03-15T14:00:00Z");
+        expect(previousRun("0 9 * * *", { from, timezone: "NotATimezone" })).toBeNull();
+      });
+
+      it("should return false for invalid timezone in isMatch", () => {
+        const date = new Date("2026-03-15T09:00:00Z");
+        expect(isMatch("0 9 * * *", date, { timezone: "Fake/Zone" })).toBe(false);
+      });
+
+      it("should return null for empty timezone string in nextRun", () => {
+        const from = new Date("2026-03-15T14:00:00Z");
+        expect(nextRun("0 9 * * *", { from, timezone: "" })).toBeNull();
+      });
+    });
+  });
 });
