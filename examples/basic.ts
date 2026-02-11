@@ -1,4 +1,4 @@
-import { nextRun, previousRun, nextRuns, isValid, parse } from "../src/index.js";
+import { nextRun, previousRun, nextRuns, isValid, parse, describe } from "../src/index.js";
 
 console.log("=== cron-fast Examples ===\n");
 
@@ -45,6 +45,13 @@ const parsed = parse("0 9 * * 1-5");
 console.log(`   Minutes: ${parsed.minute}`);
 console.log(`   Hours: ${parsed.hour}`);
 console.log(`   Weekdays: ${parsed.weekday} (Mon-Fri)\n`);
+
+// Example 8: Human-readable descriptions
+console.log("8. Human-readable descriptions:");
+console.log(`   "*/5 * * * *" → ${describe("*/5 * * * *")}`);
+console.log(`   "0 9 * * 1-5" → ${describe("0 9 * * 1-5")}`);
+console.log(`   "30 14 * * *" → ${describe("30 14 * * *")}`);
+console.log(`   "0 */6 * * *" → ${describe("0 */6 * * *")}\n`);
 
 console.log("=== Performance Test ===\n");
 const iterations = 10000;

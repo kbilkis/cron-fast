@@ -122,6 +122,17 @@ parse("0 9 * * 1-5");
 // Returns: { minute: [0], hour: [9], day: [1, 2, ..., 31], month: [0, 1, 2, ..., 11], weekday: [1,2,3,4,5] }
 ```
 
+### `describe(expression)`
+
+Get a human-readable description of a cron expression.
+
+```typescript
+describe("*/5 * * * *"); // "Every 5 minutes"
+describe("0 9 * * 1-5"); // "At minute 0, between 9 AM and 5 PM, on weekdays"
+describe("*/15 3,4 1-4 */3 6");
+// "Every 15 minutes, at 3 AM, 4 AM, on days 1-4 of the month or on Saturday, every 3 months"
+```
+
 ## Cron Expression Format
 
 ```
@@ -165,12 +176,13 @@ cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 14.22 KB | 6.16 KB  | **2.35 KB** |
+| `Full bundle (all exports)                           ` | 19.65 KB | 8.80 KB  | **3.28 KB** |
 | `nextRun only                                        ` | 12.64 KB | 5.43 KB  | **2.12 KB** |
 | `previousRun only                                    ` | 12.65 KB | 5.43 KB  | **2.12 KB** |
 | `nextRuns only                                       ` | 13.03 KB | 5.58 KB  | **2.18 KB** |
 | `isValid only                                        ` | 4.00 KB  | 1.81 KB  | **951 B**   |
 | `parse only                                          ` | 3.89 KB  | 1.76 KB  | **926 B**   |
+| `describe only                                       ` | 9.30 KB  | 4.36 KB  | **1.84 KB** |
 | `isMatch only                                        ` | 5.59 KB  | 2.54 KB  | **1.22 KB** |
 | `Validation only (isValid + parse)                   ` | 4.01 KB  | 1.81 KB  | **952 B**   |
 | `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.52 KB | 5.83 KB  | **2.20 KB** |

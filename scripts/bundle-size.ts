@@ -44,6 +44,10 @@ const scenarios = [
     code: `import { parse } from "${indexPath}";\nconsole.log(parse);`,
   },
   {
+    name: "describe only",
+    code: `import { describe } from "${indexPath}";\nconsole.log(describe);`,
+  },
+  {
     name: "isMatch only",
     code: `import { isMatch } from "${indexPath}";\nconsole.log(isMatch);`,
   },
