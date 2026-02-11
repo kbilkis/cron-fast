@@ -181,7 +181,7 @@ describe("describe", () => {
 
     // Very specific: multiple minutes, hours, days, months, and weekdays
     expect(describeCron("5,10,15,20 6,12,18 1,15 1,4,7,10 1,3,5")).toBe(
-      "At minutes 5, 10, 15, 20, at 6 AM, 12 PM, 6 PM, on days 1, 15 of the month or on Monday, Wednesday, Friday, in January, April, July, October",
+      "At minutes 5, 10, 15, and 1 more, at 6 AM, 12 PM, 6 PM, on days 1, 15 of the month or on Monday, Wednesday, Friday, every 3 months",
     );
 
     // Long range with specific weekdays
@@ -191,12 +191,12 @@ describe("describe", () => {
 
     // Multiple ranges and lists combined
     expect(describeCron("0,30 6-8,14-16,20-22 * * *")).toBe(
-      "At minutes 0, 30, at 6 AM, 7 AM, 8 AM, 2 PM, 3 PM, and 4 more",
+      "Every 30 minutes, at 6 AM, 7 AM, 8 AM, 2 PM, 3 PM, and 4 more",
     );
 
     // Extreme: many specific values across all fields
     expect(describeCron("1,2,3,4,5 7,8,9,10,11 2,4,6,8,10 2,5,8,11 0,6")).toBe(
-      "At minutes 1, 2, 3, and 2 more, at 7 AM, 8 AM, 9 AM, 10 AM, 11 AM, on days 2, 4, 6, and 2 more of the month or on weekends, in February, May, August, November",
+      "At minutes 1-5, between 7 AM and 11 AM, on days 2, 4, 6, and 2 more of the month or on weekends, in February, May, August, November",
     );
   });
 });
