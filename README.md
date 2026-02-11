@@ -172,17 +172,17 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v0.1.3):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v0.3.0):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 19.65 KB | 8.80 KB  | **3.28 KB** |
+| `Full bundle (all exports)                           ` | 21.39 KB | 9.55 KB  | **3.52 KB** |
 | `nextRun only                                        ` | 12.64 KB | 5.43 KB  | **2.12 KB** |
 | `previousRun only                                    ` | 12.65 KB | 5.43 KB  | **2.12 KB** |
 | `nextRuns only                                       ` | 13.03 KB | 5.58 KB  | **2.18 KB** |
 | `isValid only                                        ` | 4.00 KB  | 1.81 KB  | **951 B**   |
 | `parse only                                          ` | 3.89 KB  | 1.76 KB  | **926 B**   |
-| `describe only                                       ` | 9.30 KB  | 4.36 KB  | **1.84 KB** |
+| `describe only                                       ` | 11.04 KB | 5.11 KB  | **2.06 KB** |
 | `isMatch only                                        ` | 5.59 KB  | 2.54 KB  | **1.22 KB** |
 | `Validation only (isValid + parse)                   ` | 4.01 KB  | 1.81 KB  | **952 B**   |
 | `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.52 KB | 5.83 KB  | **2.20 KB** |
