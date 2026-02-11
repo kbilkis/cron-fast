@@ -8,6 +8,23 @@ import { join } from "node:path";
 
 const cronValidate = (cronValidateModule as any).default || cronValidateModule;
 
+// Detect runtime and version
+function detectRuntime(): { name: string; version: string } {
+  // @ts-ignore - Deno global
+  if (typeof Deno !== "undefined") {
+    // @ts-ignore
+    return { name: "deno", version: Deno.version.deno };
+  }
+  // @ts-ignore - Bun global
+  if (typeof Bun !== "undefined") {
+    // @ts-ignore
+    return { name: "bun", version: Bun.version };
+  }
+  return { name: "node", version: process.version.slice(1) }; // Remove 'v' prefix
+}
+
+const runtime = detectRuntime();
+
 // Get library versions
 const rootDir = process.cwd();
 const getVersion = (pkg: string) => {
@@ -77,6 +94,7 @@ function formatNumber(num: number): string {
 }
 
 console.log("🚀 Cron Scheduler Benchmark - Library Comparison\n");
+console.log(`Runtime: ${runtime.name} v${runtime.version}\n`);
 console.log("Library versions:");
 Object.entries(versions).forEach(([lib, ver]) => {
   console.log(`  ${lib.padEnd(15)}: v${ver}`);
@@ -380,8 +398,8 @@ function updateReadme(
   const readmePath = join(rootDir, "README.md");
   let readme = readFileSync(readmePath, "utf-8");
 
-  // Update version line
-  const versionLine = `> Tested with cron-fast v${versions["cron-fast"]}, croner v${versions.croner}, cron-parser v${versions["cron-parser"]}, cron-schedule v${versions["cron-schedule"]}`;
+  // Update version line with Node.js version
+  const versionLine = `> Tested with cron-fast v${versions["cron-fast"]}, croner v${versions.croner}, cron-parser v${versions["cron-parser"]}, cron-schedule v${versions["cron-schedule"]} on Node.js v${runtime.version}`;
   readme = readme.replace(/> Tested with cron-fast v.*\n/, versionLine + "\n");
 
   // Find and replace the performance table
@@ -414,11 +432,11 @@ function updateBenchmarkDoc(
   validationResults: BenchmarkResult[],
   parseResults: BenchmarkResult[],
 ): void {
-  const docPath = join(rootDir, "docs/benchmark-comparison.md");
+  const docPath = join(rootDir, `docs/benchmark-comparison-${runtime.name}.md`);
   let doc = readFileSync(docPath, "utf-8");
 
-  // Update the version line
-  const versionLine = `> Tested with cron-fast v${versions["cron-fast"]}, croner v${versions.croner}, cron-parser v${versions["cron-parser"]}, cron-schedule v${versions["cron-schedule"]}, cron-validate v${versions["cron-validate"]}`;
+  // Update the version line with runtime info
+  const versionLine = `> Tested with ${runtime.name} v${runtime.version}, cron-fast v${versions["cron-fast"]}, croner v${versions.croner}, cron-parser v${versions["cron-parser"]}, cron-schedule v${versions["cron-schedule"]}, cron-validate v${versions["cron-validate"]}`;
   doc = doc.replace(/> Tested with.*\n/, versionLine + "\n");
 
   // Helper to calculate averages
@@ -522,7 +540,7 @@ function updateBenchmarkDoc(
   );
 
   writeFileSync(docPath, doc, "utf-8");
-  console.log("  ✓ Updated docs/benchmark-comparison.md");
+  console.log(`  ✓ Updated docs/benchmark-comparison-${runtime.name}.md`);
 }
 
 // Print all results
@@ -590,7 +608,11 @@ if (!shouldUpdate) {
     "cron-validate": calcAvg(parseResults, "cron-validate"),
   };
 
-  updateReadme(nextAvgs, prevAvgs, validationAvgs, parseAvgs);
+  // Only update README when running on Node.js
+  if (runtime.name === "node") {
+    updateReadme(nextAvgs, prevAvgs, validationAvgs, parseAvgs);
+  }
+
   updateBenchmarkDoc(results, prevResults, validationResults, parseResults);
 
   console.log("✅ Documentation updated successfully!\n");

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Bundle size analysis script
  *

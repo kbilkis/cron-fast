@@ -274,16 +274,16 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v0.1.3, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0
+> Tested with cron-fast v0.3.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
 
 | Operation    | cron-fast      | croner    | cron-parser | cron-schedule |
 | ------------ | -------------- | --------- | ----------- | ------------- |
-| Next run     | **368k ops/s** | 29k ops/s | 30k ops/s   | 385k ops/s    |
-| Previous run | **368k ops/s** | 29k ops/s | 27k ops/s   | 384k ops/s    |
-| Validation   | **486k ops/s** | 31k ops/s | 89k ops/s   | 452k ops/s    |
-| Parsing      | **541k ops/s** | 32k ops/s | 96k ops/s   | 475k ops/s    |
+| Next run     | **354k ops/s** | 29k ops/s | 29k ops/s   | 387k ops/s    |
+| Previous run | **353k ops/s** | 29k ops/s | 25k ops/s   | 343k ops/s    |
+| Validation   | **545k ops/s** | 33k ops/s | 94k ops/s   | 473k ops/s    |
+| Parsing      | **517k ops/s** | 32k ops/s | 93k ops/s   | 465k ops/s    |
 
-See [detailed benchmarks and feature comparison](docs/benchmark-comparison.md) for more information.
+See [detailed benchmarks and feature comparison](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
 Run benchmarks yourself: `pnpm benchmark`
 
