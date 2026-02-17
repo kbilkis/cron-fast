@@ -8,9 +8,12 @@ function isValidTimezone(timezone: string): boolean {
   }
 }
 
-/** Convert a UTC date to wall-clock time in the target timezone. Returns null if timezone is invalid. */
-export function convertToTimezone(date: Date, timezone: string): Date | null {
-  if (!isValidTimezone(timezone)) return null;
+/**
+ * Convert a UTC date to wall-clock time in the target timezone.
+ * @throws {Error} If timezone is invalid
+ */
+export function convertToTimezone(date: Date, timezone: string): Date {
+  if (!isValidTimezone(timezone)) throw new Error(`Invalid timezone: "${timezone}"`);
 
   const str = date.toLocaleString("en-US", {
     timeZone: timezone,
@@ -35,14 +38,14 @@ export function convertToTimezone(date: Date, timezone: string): Date | null {
 
 /**
  * Convert a timezone-local date back to UTC (inverse of convertToTimezone).
- * Returns null if timezone is invalid.
+ * @throws {Error} If timezone is invalid
  *
  * Note: During DST fall-back, multiple UTC times map to the same wall-clock time.
  * The result is implementation-defined. Avoid scheduling during DST transition hours
  * for predictable behavior.
  */
-export function convertFromTimezone(date: Date, timezone: string): Date | null {
-  if (!isValidTimezone(timezone)) return null;
+export function convertFromTimezone(date: Date, timezone: string): Date {
+  if (!isValidTimezone(timezone)) throw new Error(`Invalid timezone: "${timezone}"`);
 
   // Target time as a comparable number (for checking if we found it)
   const targetTime = Date.UTC(

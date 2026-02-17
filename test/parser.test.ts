@@ -288,7 +288,7 @@ describe("parser", () => {
       it("should NOT support full month names (only 3-letter codes)", () => {
         // The parser only supports 3-letter codes: jan, feb, mar, etc.
         // Full names like JANUARY are not supported
-        expect(parse("0 0 1 JANUARY *")).toBeNull();
+        expect(() => parse("0 0 1 JANUARY *")).toThrow();
       });
 
       it("should mix month names and numbers in comma-separated list", () => {
@@ -346,284 +346,284 @@ describe("parser", () => {
 
     describe("error cases - empty and malformed input", () => {
       it("should return null for empty expression", () => {
-        expect(parse("")).toBeNull();
+        expect(() => parse("")).toThrow();
       });
 
       it("should return null for whitespace-only expression", () => {
-        expect(parse("     ")).toBeNull();
+        expect(() => parse("     ")).toThrow();
       });
 
       it("should return null for tab-only expression", () => {
-        expect(parse("\t\t\t")).toBeNull();
+        expect(() => parse("\t\t\t")).toThrow();
       });
 
       it("should return null for newline-only expression", () => {
-        expect(parse("\n\n")).toBeNull();
+        expect(() => parse("\n\n")).toThrow();
       });
 
       it("should return null for mixed whitespace-only expression", () => {
-        expect(parse("  \t\n  ")).toBeNull();
+        expect(() => parse("  \t\n  ")).toThrow();
       });
 
       it("should return null for wrong number of fields - too few", () => {
-        expect(parse("* * *")).toBeNull();
+        expect(() => parse("* * *")).toThrow();
       });
 
       it("should return null for wrong number of fields - too many", () => {
-        expect(parse("* * * * * *")).toBeNull();
+        expect(() => parse("* * * * * *")).toThrow();
       });
 
       it("should return null for single field", () => {
-        expect(parse("*")).toBeNull();
+        expect(() => parse("*")).toThrow();
       });
 
       it("should return null for four fields", () => {
-        expect(parse("* * * *")).toBeNull();
+        expect(() => parse("* * * *")).toThrow();
       });
     });
 
     describe("error cases - step values", () => {
       it("should return null for invalid step value (zero)", () => {
-        expect(parse("*/0 * * * *")).toBeNull();
+        expect(() => parse("*/0 * * * *")).toThrow();
       });
 
       it("should return null for negative step value", () => {
-        expect(parse("*/-5 * * * *")).toBeNull();
+        expect(() => parse("*/-5 * * * *")).toThrow();
       });
 
       it("should return null for non-numeric step value", () => {
-        expect(parse("*/abc * * * *")).toBeNull();
+        expect(() => parse("*/abc * * * *")).toThrow();
       });
 
       it("should return null for step with empty string", () => {
-        expect(parse("/5 * * * *")).toBeNull();
+        expect(() => parse("/5 * * * *")).toThrow();
       });
 
       it("should return null for step at end only", () => {
-        expect(parse("5/ * * * *")).toBeNull();
+        expect(() => parse("5/ * * * *")).toThrow();
       });
 
       it("should return null for invalid range format in step value", () => {
-        expect(parse("10-20-30/5 * * * *")).toBeNull();
+        expect(() => parse("10-20-30/5 * * * *")).toThrow();
       });
 
       it("should return null for invalid start value in range with step", () => {
-        expect(parse("abc-20/5 * * * *")).toBeNull();
+        expect(() => parse("abc-20/5 * * * *")).toThrow();
       });
 
       it("should return null for invalid end value in range with step", () => {
-        expect(parse("10-xyz/5 * * * *")).toBeNull();
+        expect(() => parse("10-xyz/5 * * * *")).toThrow();
       });
     });
 
     describe("error cases - ranges", () => {
       it("should return null for invalid range (start > end)", () => {
-        expect(parse("50-10 * * * *")).toBeNull();
+        expect(() => parse("50-10 * * * *")).toThrow();
       });
 
       it("should return null for out of range value in simple range", () => {
-        expect(parse("70-80 * * * *")).toBeNull();
+        expect(() => parse("70-80 * * * *")).toThrow();
       });
 
       it("should return null for out of range value in step range", () => {
-        expect(parse("70-80/5 * * * *")).toBeNull();
+        expect(() => parse("70-80/5 * * * *")).toThrow();
       });
 
       it("should return null for range with only dash", () => {
-        expect(parse("- * * * *")).toBeNull();
+        expect(() => parse("- * * * *")).toThrow();
       });
 
       it("should return null for multiple dashes in range (malformed input)", () => {
         // Previously this was a parser quirk that silently accepted "1-5-10" as "1-5".
         // Now we return null to catch malformed input early.
-        expect(parse("1-5-10 * * * *")).toBeNull();
+        expect(() => parse("1-5-10 * * * *")).toThrow();
       });
     });
 
     describe("error cases - out of range values", () => {
       it("should return null for minute out of range (60)", () => {
-        expect(parse("60 * * * *")).toBeNull();
+        expect(() => parse("60 * * * *")).toThrow();
       });
 
       it("should return null for minute out of range (negative)", () => {
-        expect(parse("-1 * * * *")).toBeNull();
+        expect(() => parse("-1 * * * *")).toThrow();
       });
 
       it("should return null for minute out of range (100)", () => {
-        expect(parse("100 * * * *")).toBeNull();
+        expect(() => parse("100 * * * *")).toThrow();
       });
 
       it("should return null for hour out of range (24)", () => {
-        expect(parse("* 24 * * *")).toBeNull();
+        expect(() => parse("* 24 * * *")).toThrow();
       });
 
       it("should return null for hour out of range (negative)", () => {
-        expect(parse("* -1 * * *")).toBeNull();
+        expect(() => parse("* -1 * * *")).toThrow();
       });
 
       it("should return null for day out of range (0)", () => {
-        expect(parse("* * 0 * *")).toBeNull();
+        expect(() => parse("* * 0 * *")).toThrow();
       });
 
       it("should return null for day out of range (32)", () => {
-        expect(parse("* * 32 * *")).toBeNull();
+        expect(() => parse("* * 32 * *")).toThrow();
       });
 
       it("should return null for month out of range (0)", () => {
         // Month 0 is invalid because months are 1-12 in cron format
-        expect(parse("* * * 0 *")).toBeNull();
+        expect(() => parse("* * * 0 *")).toThrow();
       });
 
       it("should return null for month out of range (13)", () => {
-        expect(parse("* * * 13 *")).toBeNull();
+        expect(() => parse("* * * 13 *")).toThrow();
       });
 
       it("should return null for weekday out of range (8)", () => {
-        expect(parse("* * * * 8")).toBeNull();
+        expect(() => parse("* * * * 8")).toThrow();
       });
     });
 
     describe("error cases - invalid value names", () => {
       it("should return null for invalid weekday name", () => {
-        expect(parse("0 0 * * notaday")).toBeNull();
+        expect(() => parse("0 0 * * notaday")).toThrow();
       });
 
       it("should return null for invalid month name", () => {
-        expect(parse("0 0 1 notamonth *")).toBeNull();
+        expect(() => parse("0 0 1 notamonth *")).toThrow();
       });
 
       it("should return null for partial month name", () => {
-        expect(parse("0 0 1 janu *")).toBeNull();
+        expect(() => parse("0 0 1 janu *")).toThrow();
       });
 
       it("should return null for partial weekday name", () => {
-        expect(parse("0 0 * * mond")).toBeNull();
+        expect(() => parse("0 0 * * mond")).toThrow();
       });
 
       it("should return null for completely invalid field value", () => {
-        expect(parse("abc * * * *")).toBeNull();
+        expect(() => parse("abc * * * *")).toThrow();
       });
 
       it("should return null for special characters in value", () => {
-        expect(parse("@ * * * *")).toBeNull();
+        expect(() => parse("@ * * * *")).toThrow();
       });
     });
 
     describe("error cases - comma-separated issues", () => {
       it("should return null for empty part between commas", () => {
-        expect(parse("1,,3 * * * *")).toBeNull();
+        expect(() => parse("1,,3 * * * *")).toThrow();
       });
 
       it("should return null for trailing comma", () => {
-        expect(parse("1,2, * * * *")).toBeNull();
+        expect(() => parse("1,2, * * * *")).toThrow();
       });
 
       it("should return null for leading comma", () => {
-        expect(parse(",1,2 * * * *")).toBeNull();
+        expect(() => parse(",1,2 * * * *")).toThrow();
       });
 
       it("should return null for invalid value in comma list", () => {
-        expect(parse("1,2,abc,4 * * * *")).toBeNull();
+        expect(() => parse("1,2,abc,4 * * * *")).toThrow();
       });
     });
 
     describe("day/month validation", () => {
       it("should return null for impossible day/month combination (Feb 31)", () => {
-        expect(parse("0 0 31 2 *")).toBeNull();
+        expect(() => parse("0 0 31 2 *")).toThrow();
       });
 
       it("should return null for impossible day/month combination (Feb 30)", () => {
-        expect(parse("0 0 30 2 *")).toBeNull();
+        expect(() => parse("0 0 30 2 *")).toThrow();
       });
 
       it("should return null for impossible day/month combination (Apr 31)", () => {
-        expect(parse("0 0 31 4 *")).toBeNull();
+        expect(() => parse("0 0 31 4 *")).toThrow();
       });
 
       it("should return null for impossible day/month combination (Jun 31)", () => {
-        expect(parse("0 0 31 6 *")).toBeNull();
+        expect(() => parse("0 0 31 6 *")).toThrow();
       });
 
       it("should return null for impossible day/month combination (Sep 31)", () => {
-        expect(parse("0 0 31 9 *")).toBeNull();
+        expect(() => parse("0 0 31 9 *")).toThrow();
       });
 
       it("should return null for impossible day/month combination (Nov 31)", () => {
-        expect(parse("0 0 31 11 *")).toBeNull();
+        expect(() => parse("0 0 31 11 *")).toThrow();
       });
 
       it("should allow Feb 29 (exists in leap years)", () => {
-        expect(parse("0 0 29 2 *")).not.toBeNull();
+        expect(() => parse("0 0 29 2 *")).not.toThrow();
       });
 
       it("should allow day 31 with wildcard month", () => {
-        expect(parse("0 0 31 * *")).not.toBeNull();
+        expect(() => parse("0 0 31 * *")).not.toThrow();
       });
 
       it("should allow wildcard day with specific month", () => {
-        expect(parse("0 0 * 2 *")).not.toBeNull();
+        expect(() => parse("0 0 * 2 *")).not.toThrow();
       });
 
       it("should allow day 31 in January", () => {
-        expect(parse("0 0 31 1 *")).not.toBeNull();
+        expect(() => parse("0 0 31 1 *")).not.toThrow();
       });
 
       it("should allow day 31 in March", () => {
-        expect(parse("0 0 31 3 *")).not.toBeNull();
+        expect(() => parse("0 0 31 3 *")).not.toThrow();
       });
 
       it("should allow day 31 in May", () => {
-        expect(parse("0 0 31 5 *")).not.toBeNull();
+        expect(() => parse("0 0 31 5 *")).not.toThrow();
       });
 
       it("should allow day 31 in July", () => {
-        expect(parse("0 0 31 7 *")).not.toBeNull();
+        expect(() => parse("0 0 31 7 *")).not.toThrow();
       });
 
       it("should allow day 31 in August", () => {
-        expect(parse("0 0 31 8 *")).not.toBeNull();
+        expect(() => parse("0 0 31 8 *")).not.toThrow();
       });
 
       it("should allow day 31 in October", () => {
-        expect(parse("0 0 31 10 *")).not.toBeNull();
+        expect(() => parse("0 0 31 10 *")).not.toThrow();
       });
 
       it("should allow day 31 in December", () => {
-        expect(parse("0 0 31 12 *")).not.toBeNull();
+        expect(() => parse("0 0 31 12 *")).not.toThrow();
       });
 
       it("should allow day 30 in April", () => {
-        expect(parse("0 0 30 4 *")).not.toBeNull();
+        expect(() => parse("0 0 30 4 *")).not.toThrow();
       });
 
       it("should allow day 30 in June", () => {
-        expect(parse("0 0 30 6 *")).not.toBeNull();
+        expect(() => parse("0 0 30 6 *")).not.toThrow();
       });
 
       it("should allow day 30 in September", () => {
-        expect(parse("0 0 30 9 *")).not.toBeNull();
+        expect(() => parse("0 0 30 9 *")).not.toThrow();
       });
 
       it("should allow day 30 in November", () => {
-        expect(parse("0 0 30 11 *")).not.toBeNull();
+        expect(() => parse("0 0 30 11 *")).not.toThrow();
       });
 
       it("should handle multiple months with mixed valid/invalid days", () => {
         // Days 30-31 in Feb,Apr - Feb 30-31 invalid, but Apr 30 valid
-        expect(parse("0 0 30-31 2,4 *")).not.toBeNull();
+        expect(() => parse("0 0 30-31 2,4 *")).not.toThrow();
       });
 
       it("should return null when all day/month combinations are invalid", () => {
         // Day 31 only in Feb,Apr,Jun,Sep,Nov (all have < 31 days)
-        expect(parse("0 0 31 2,4,6,9,11 *")).toBeNull();
+        expect(() => parse("0 0 31 2,4,6,9,11 *")).toThrow();
       });
 
       it("should allow with month name for valid day", () => {
-        expect(parse("0 0 31 jan *")).not.toBeNull();
+        expect(() => parse("0 0 31 jan *")).not.toThrow();
       });
 
       it("should return null with month name for invalid day", () => {
-        expect(parse("0 0 31 apr *")).toBeNull();
+        expect(() => parse("0 0 31 apr *")).toThrow();
       });
     });
   });

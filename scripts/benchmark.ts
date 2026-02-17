@@ -103,43 +103,42 @@ console.log("\nComparing: cron-fast vs croner vs cron-parser vs cron-schedule vs
 
 const testCases = [
   {
-    name: "Next minute",
+    name: "Every minute",
     cron: "* * * * *",
     from: new Date("2026-01-15T10:30:00Z"),
   },
   {
-    name: "Specific time today",
-    cron: "0 15 * * *",
-    from: new Date("2026-01-15T10:30:00Z"),
-  },
-  {
-    name: "Next day at midnight",
-    cron: "0 0 * * *",
-    from: new Date("2026-01-15T23:30:00Z"),
-  },
-  {
-    name: "Next Monday",
-    cron: "0 9 * * 1",
-    from: new Date("2026-01-15T10:00:00Z"),
-  },
-  {
-    name: "First of next month",
+    name: "Sparse: First of month",
     cron: "0 0 1 * *",
     from: new Date("2026-01-15T10:00:00Z"),
   },
   {
-    name: "31st of month (skips Feb)",
+    name: "Sparse: 31st (skips months)",
     cron: "0 12 31 * *",
     from: new Date("2026-02-15T10:00:00Z"),
   },
+  // Step values: cron-fast should jump
   {
-    name: "Every 15 minutes",
+    name: "Step: Every 15 minutes",
     cron: "*/15 * * * *",
     from: new Date("2026-01-15T10:07:00Z"),
   },
+  // Specific times: direct jumps
   {
-    name: "Christmas at noon",
-    cron: "0 12 25 12 *",
+    name: "Specific: 9 AM daily",
+    cron: "0 9 * * *",
+    from: new Date("2026-01-15T10:30:00Z"),
+  },
+  // OR-mode: potentially slower for cron-fast
+  {
+    name: "OR-mode: 15th OR Monday",
+    cron: "0 9 15 * 1",
+    from: new Date("2026-01-15T10:00:00Z"),
+  },
+  // Weekday only
+  {
+    name: "Weekdays: Mon-Fri 9 AM",
+    cron: "0 9 * * 1-5",
     from: new Date("2026-01-15T10:00:00Z"),
   },
 ];
@@ -381,10 +380,10 @@ function printResultsTable(
       const libAvg = Math.round(
         libResults.reduce((sum, r) => sum + r.opsPerSecond, 0) / libResults.length,
       );
-      const speedup = (cronFastAvg / libAvg).toFixed(1);
-      console.log(
-        `   ${lib.padEnd(15)}: ${speedup}x ${cronFastAvg > libAvg ? "faster" : "slower"}`,
-      );
+      const ratio = cronFastAvg / libAvg;
+      const speedup =
+        ratio >= 1 ? `${ratio.toFixed(1)}x faster` : `${(libAvg / cronFastAvg).toFixed(1)}x slower`;
+      console.log(`   ${lib.padEnd(15)}: ${speedup}`);
     }
   });
 }
@@ -451,7 +450,44 @@ function updateBenchmarkDoc(
   // Helper to calculate speedup
   const calcSpeedup = (cronFastAvg: number, libAvg: number) => {
     const ratio = cronFastAvg / libAvg;
-    return ratio > 1 ? `${ratio.toFixed(1)}x faster` : `${(1 / ratio).toFixed(1)}x slower`;
+    return ratio >= 1
+      ? `${ratio.toFixed(1)}x faster`
+      : `${(libAvg / cronFastAvg).toFixed(1)}x slower`;
+  };
+
+  // Helper to build detailed per-test table
+  const buildDetailedTable = (
+    results: BenchmarkResult[],
+    testNames: string[],
+    libraries: string[],
+  ) => {
+    const header = `| Test Case | ${libraries.join(" | ")} |`;
+    const separator = `| --- | ${libraries.map(() => "---:").join(" | ")} |`;
+    const rows = testNames.map((testName) => {
+      const values = libraries.map((lib) => {
+        const result = results.find((r) => r.name === testName && r.library === lib);
+        if (!result) return "N/A";
+        const ops = formatOps(result.opsPerSecond);
+
+        // Add comparison indicator vs cron-fast
+        if (lib !== "cron-fast") {
+          const cronFastResult = results.find(
+            (r) => r.name === testName && r.library === "cron-fast",
+          );
+          if (cronFastResult) {
+            const ratio = cronFastResult.opsPerSecond / result.opsPerSecond;
+            if (ratio >= 1.1) {
+              return `${ops} ✓`; // cron-fast is faster
+            } else if (ratio <= 0.9) {
+              return `${ops} ✗`; // cron-fast is slower
+            }
+          }
+        }
+        return ops;
+      });
+      return `| ${testName} | ${values.join(" | ")} |`;
+    });
+    return [header, separator, ...rows].join("\n");
   };
 
   // Calculate averages for each benchmark
@@ -538,6 +574,46 @@ function updateBenchmarkDoc(
     /### Parsing\n\n\| Library.*?\n\| -.*?\n(?:\| .*?\n)+/s,
     `### Parsing\n\n${parseTable}\n`,
   );
+
+  // Add detailed per-test tables at the end
+  const testNames = testCases.map((tc) => tc.name);
+  const validationTestNames = testCases.map((tc) => tc.cron);
+
+  const detailedSection = `
+
+## Detailed Per-Test Results
+
+### Next Execution - All Libraries
+
+${buildDetailedTable(results, testNames, ["cron-fast", "cron-schedule", "croner", "cron-parser"])}
+
+✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Previous Execution - All Libraries
+
+${buildDetailedTable(prevResults, testNames, ["cron-fast", "cron-schedule", "croner", "cron-parser"])}
+
+✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Validation - All Libraries
+
+${buildDetailedTable(validationResults, validationTestNames, ["cron-fast", "cron-schedule", "cron-parser", "croner", "cron-validate"])}
+
+✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Parsing - All Libraries
+
+${buildDetailedTable(parseResults, validationTestNames, ["cron-fast", "cron-schedule", "cron-parser", "croner", "cron-validate"])}
+
+✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+`;
+
+  // Replace or append detailed section
+  if (doc.includes("## Detailed Per-Test Results")) {
+    doc = doc.replace(/## Detailed Per-Test Results[\s\S]*$/, detailedSection.trim());
+  } else {
+    doc += "\n" + detailedSection;
+  }
 
   writeFileSync(docPath, doc, "utf-8");
   console.log(`  ✓ Updated docs/benchmark-comparison-${runtime.name}.md`);

@@ -34,14 +34,11 @@ const DIR = {
 /** Get the next execution time for a cron expression. Throws if expression or timezone is invalid, or if no match is found within iteration limit. */
 export function nextRun(expression: string, options?: CronOptions): Date {
   const parsed = parse(expression);
-  if (!parsed) throw new Error(`Invalid cron expression: "${expression}"`);
 
   const from = options?.from || new Date();
   const tz = options?.timezone;
 
   const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
-  if (!start) throw new Error(`Invalid timezone: "${tz}"`);
-
   start.setUTCSeconds(0, 0);
   start.setUTCMinutes(start.getUTCMinutes() + 1);
 
@@ -51,14 +48,11 @@ export function nextRun(expression: string, options?: CronOptions): Date {
 /** Get the previous execution time for a cron expression. Throws if expression or timezone is invalid, or if no match is found within iteration limit. */
 export function previousRun(expression: string, options?: CronOptions): Date {
   const parsed = parse(expression);
-  if (!parsed) throw new Error(`Invalid cron expression: "${expression}"`);
 
   const from = options?.from || new Date();
   const tz = options?.timezone;
 
   const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
-  if (!start) throw new Error(`Invalid timezone: "${tz}"`);
-
   start.setUTCSeconds(0, 0);
   start.setUTCMinutes(start.getUTCMinutes() - 1);
 
@@ -87,12 +81,9 @@ export function isMatch(
   options?: Pick<CronOptions, "timezone">,
 ): boolean {
   const parsed = parse(expression);
-  if (!parsed) throw new Error(`Invalid cron expression: "${expression}"`);
 
   const tz = options?.timezone;
   const checkDate = tz !== undefined ? convertToTimezone(date, tz) : new Date(date);
-
-  if (!checkDate) throw new Error(`Invalid timezone: "${tz}"`);
   return matches(parsed, checkDate);
 }
 
@@ -108,7 +99,7 @@ function findMatch(
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     if (matches(parsed, current)) {
-      return tz !== undefined ? convertFromTimezone(current, tz)! : current;
+      return tz !== undefined ? convertFromTimezone(current, tz) : current;
     }
     advanceDate(parsed, current, dir);
   }

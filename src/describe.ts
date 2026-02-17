@@ -30,11 +30,15 @@ const ORDINAL_SUFFIXES = ["th", "st", "nd", "rd", "th", "th", "th", "th", "th", 
 
 /**
  * Generate a human-readable description of a cron expression.
- * Returns empty string if the expression is invalid.
+ * Returns "Invalid cron expression" if the expression is invalid.
  */
 export function describe(expression: string): string {
-  const parsed = parse(expression);
-  if (!parsed) return "";
+  let parsed: ParsedCron;
+  try {
+    parsed = parse(expression);
+  } catch {
+    return "Invalid cron expression";
+  }
 
   const parts: string[] = [];
 

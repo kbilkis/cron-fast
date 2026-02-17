@@ -115,7 +115,7 @@ isMatch("0 9 * * *", new Date("2026-03-15T09:00:00Z")); // true
 
 ### `parse(expression)`
 
-Parse a cron expression into its components.
+Parse a cron expression into its components. **Throws** if the expression is invalid.
 
 ```typescript
 parse("0 9 * * 1-5");
@@ -124,13 +124,14 @@ parse("0 9 * * 1-5");
 
 ### `describe(expression)`
 
-Get a human-readable description of a cron expression.
+Get a human-readable description of a cron expression. Returns `"Invalid cron expression"` if the expression is invalid.
 
 ```typescript
 describe("*/5 * * * *"); // "Every 5 minutes"
 describe("0 9 * * 1-5"); // "At minute 0, between 9 AM and 5 PM, on weekdays"
 describe("*/15 3,4 1-4 */3 6");
 // "Every 15 minutes, at 3 AM, 4 AM, on days 1-4 of the month or on Saturday, every 3 months"
+describe("invalid"); // "Invalid cron expression"
 ```
 
 ## Cron Expression Format
@@ -172,20 +173,20 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v1.0.0):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v2.0.1):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 21.09 KB | 9.52 KB  | **3.46 KB** |
-| `nextRun only                                        ` | 12.32 KB | 5.41 KB  | **2.05 KB** |
-| `previousRun only                                    ` | 12.33 KB | 5.41 KB  | **2.05 KB** |
-| `nextRuns only                                       ` | 12.73 KB | 5.58 KB  | **2.12 KB** |
-| `isValid only                                        ` | 3.71 KB  | 1.69 KB  | **843 B**   |
-| `parse only                                          ` | 3.64 KB  | 1.66 KB  | **830 B**   |
-| `describe only                                       ` | 10.82 KB | 5.02 KB  | **1.98 KB** |
-| `isMatch only                                        ` | 5.68 KB  | 2.62 KB  | **1.20 KB** |
-| `Validation only (isValid + parse)                   ` | 3.72 KB  | 1.69 KB  | **844 B**   |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.17 KB | 5.78 KB  | **2.14 KB** |
+| `Full bundle (all exports)                           ` | 21.86 KB | 10.12 KB | **3.61 KB** |
+| `nextRun only                                        ` | 13.12 KB | 6.03 KB  | **2.21 KB** |
+| `previousRun only                                    ` | 13.13 KB | 6.03 KB  | **2.22 KB** |
+| `nextRuns only                                       ` | 13.50 KB | 6.18 KB  | **2.28 KB** |
+| `isValid only                                        ` | 4.44 KB  | 2.23 KB  | **980 B**   |
+| `parse only                                          ` | 4.33 KB  | 2.19 KB  | **956 B**   |
+| `describe only                                       ` | 11.55 KB | 5.58 KB  | **2.11 KB** |
+| `isMatch only                                        ` | 6.35 KB  | 3.15 KB  | **1.33 KB** |
+| `Validation only (isValid + parse)                   ` | 4.45 KB  | 2.24 KB  | **981 B**   |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.91 KB | 6.36 KB  | **2.30 KB** |
 
 Import only what you need:
 
@@ -272,7 +273,7 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 
 ## Tips & Gotchas
 
-- **Invalid input throws**: `nextRun`, `previousRun`, `nextRuns`, and `isMatch` throw an error for invalid cron expressions or invalid timezones. Use `isValid()` to pre-validate user input, or wrap calls in try/catch.
+- **Invalid input throws**: Most functions (`nextRun`, `previousRun`, `nextRuns`, `isMatch`, `parse`) throw an error for invalid cron expressions. `nextRun`, `previousRun`, `nextRuns`, and `isMatch` also throw for invalid timezones. Use `isValid()` to pre-validate user input, or wrap calls in try/catch. Note: `describe()` returns `"Invalid cron expression"` instead of throwing.
 - **Timezone handling**: The cron expression is interpreted in the timezone you specify, but the returned Date is always in UTC
 - **Daylight saving time**: Use IANA timezone names (like "America/New_York") instead of abbreviations (like "EST")
 - **Day 0 and 7**: Both represent Sunday in the day-of-week field
@@ -282,14 +283,14 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v1.0.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
+> Tested with cron-fast v2.0.1, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
 
 | Operation    | cron-fast      | croner    | cron-parser | cron-schedule |
 | ------------ | -------------- | --------- | ----------- | ------------- |
-| Next run     | **342k ops/s** | 26k ops/s | 27k ops/s   | 353k ops/s    |
-| Previous run | **371k ops/s** | 30k ops/s | 28k ops/s   | 380k ops/s    |
-| Validation   | **544k ops/s** | 33k ops/s | 94k ops/s   | 452k ops/s    |
-| Parsing      | **540k ops/s** | 33k ops/s | 96k ops/s   | 452k ops/s    |
+| Next run     | **367k ops/s** | 30k ops/s | 33k ops/s   | 375k ops/s    |
+| Previous run | **409k ops/s** | 31k ops/s | 37k ops/s   | 386k ops/s    |
+| Validation   | **555k ops/s** | 32k ops/s | 94k ops/s   | 436k ops/s    |
+| Parsing      | **543k ops/s** | 32k ops/s | 92k ops/s   | 446k ops/s    |
 
 See [detailed benchmarks and feature comparison](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 

@@ -1,6 +1,6 @@
 {
   "name": "cron-fast",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Fast and tiny JavaScript/TypeScript cron parser with timezone support - works in Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.",
   "keywords": [
     "browser",
@@ -64,7 +64,7 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "benchmark": "tsx scripts/benchmark.ts",
     "benchmark:deno": "deno run --allow-read --allow-env --allow-write --unstable-sloppy-imports scripts/benchmark.ts",
     "benchmark:bun": "bun run scripts/benchmark.ts",

@@ -37,30 +37,44 @@ const WEEKDAY_NAMES: Record<string, number> = {
  *
  * Note: Months are converted from cron's 1-indexed format (1-12) to
  * JavaScript's 0-indexed format (0-11) for internal consistency.
+ *
+ * @throws {Error} If the expression is invalid
  */
-export function parse(expression: string): ParsedCron | null {
+export function parse(expression: string): ParsedCron {
   const trimmed = expression.trim();
-  if (!trimmed) return null;
+  if (!trimmed) throw new Error(`Invalid cron expression: "${expression}"`);
 
   const parts = trimmed.split(/\s+/);
-  if (parts.length !== 5) return null;
+  if (parts.length !== 5)
+    throw new Error(
+      `Invalid cron expression: "${expression}" - expected 5 fields, got ${parts.length}`,
+    );
 
   const [minuteStr, hourStr, dayStr, monthStr, weekdayStr] = parts;
 
   const minute = parseField(minuteStr, 0, 59);
-  if (!minute) return null;
+  if (!minute)
+    throw new Error(
+      `Invalid cron expression: "${expression}" - invalid minute field "${minuteStr}"`,
+    );
 
   const hour = parseField(hourStr, 0, 23);
-  if (!hour) return null;
+  if (!hour)
+    throw new Error(`Invalid cron expression: "${expression}" - invalid hour field "${hourStr}"`);
 
   const day = parseField(dayStr, 1, 31);
-  if (!day) return null;
+  if (!day)
+    throw new Error(`Invalid cron expression: "${expression}" - invalid day field "${dayStr}"`);
 
   const month = parseField(monthStr, 1, 12, MONTH_NAMES);
-  if (!month) return null;
+  if (!month)
+    throw new Error(`Invalid cron expression: "${expression}" - invalid month field "${monthStr}"`);
 
   const weekdayRaw = parseField(weekdayStr, 0, 7, WEEKDAY_NAMES);
-  if (!weekdayRaw) return null;
+  if (!weekdayRaw)
+    throw new Error(
+      `Invalid cron expression: "${expression}" - invalid weekday field "${weekdayStr}"`,
+    );
 
   const weekdays = weekdayRaw.map((d) => (d === 7 ? 0 : d));
 
@@ -74,7 +88,8 @@ export function parse(expression: string): ParsedCron | null {
     weekdayIsWildcard: weekdayStr.trim() === "*",
   };
 
-  if (!hasValidDayMonthCombinations(parsed)) return null;
+  if (!hasValidDayMonthCombinations(parsed))
+    throw new Error(`Invalid cron expression: "${expression}" - impossible day/month combination`);
 
   return parsed;
 }
@@ -188,5 +203,10 @@ function parseValue(value: string, names?: Record<string, number>): number | nul
 
 /** Validate a cron expression */
 export function isValid(expression: string): boolean {
-  return parse(expression) !== null;
+  try {
+    parse(expression);
+    return true;
+  } catch {
+    return false;
+  }
 }

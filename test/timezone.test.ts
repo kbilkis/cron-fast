@@ -469,17 +469,17 @@ describe("Timezone Edge Cases - Deep Dive", () => {
     describe("invalid timezone strings", () => {
       it("should return null for completely invalid timezone", () => {
         const date = new Date("2026-03-15T12:00:00Z");
-        expect(convertToTimezone(date, "Invalid/Timezone")).toBeNull();
+        expect(() => convertToTimezone(date, "Invalid/Timezone")).toThrow();
       });
 
       it("should return null for misspelled timezone", () => {
         const date = new Date("2026-03-15T12:00:00Z");
-        expect(convertToTimezone(date, "America/New_York_City")).toBeNull();
+        expect(() => convertToTimezone(date, "America/New_York_City")).toThrow();
       });
 
       it("should return null for made-up timezone", () => {
         const date = new Date("2026-03-15T12:00:00Z");
-        expect(convertToTimezone(date, "Mars/Colony")).toBeNull();
+        expect(() => convertToTimezone(date, "Mars/Colony")).toThrow();
       });
 
       it("should accept lowercase timezone (Intl is case-insensitive)", () => {
@@ -489,24 +489,24 @@ describe("Timezone Edge Cases - Deep Dive", () => {
 
       it("should return null for invalid timezone in convertFromTimezone", () => {
         const date = new Date("2026-03-15T12:00:00Z");
-        expect(convertFromTimezone(date, "NotReal/Place")).toBeNull();
+        expect(() => convertFromTimezone(date, "NotReal/Place")).toThrow();
       });
     });
 
     describe("empty and whitespace timezone", () => {
       it("should return null for empty string timezone", () => {
         const date = new Date("2026-03-15T12:00:00Z");
-        expect(convertToTimezone(date, "")).toBeNull();
+        expect(() => convertToTimezone(date, "")).toThrow();
       });
 
       it("should return null for whitespace-only timezone", () => {
         const date = new Date("2026-03-15T12:00:00Z");
-        expect(convertToTimezone(date, "   ")).toBeNull();
+        expect(() => convertToTimezone(date, "   ")).toThrow();
       });
 
       it("should return null for empty string in convertFromTimezone", () => {
         const date = new Date("2026-03-15T12:00:00Z");
-        expect(convertFromTimezone(date, "")).toBeNull();
+        expect(() => convertFromTimezone(date, "")).toThrow();
       });
     });
 

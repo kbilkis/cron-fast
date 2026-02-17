@@ -846,13 +846,10 @@ describe("matcher", () => {
     });
 
     it("should return false when day uses step but is still effectively wildcard", () => {
-      // */1 is effectively a wildcard but parser treats it as non-wildcard
-      // Note: The parser checks dayStr.trim() === "*" for wildcard detection
-      // So */1 would NOT be treated as a wildcard
+      // */1 matches all days (1-31) but parser checks dayStr === "*" strictly,
+      // so dayIsWildcard is false. However weekday IS wildcard, so isOrMode is false.
       const parsed = parse("0 0 */1 * *");
-      // This is actually NOT a wildcard because the check is strict === "*"
-      // But let's verify the actual behavior
-      // Note: This test documents current behavior
+      expect(isOrMode(parsed)).toBe(false);
     });
   });
 
