@@ -3,6 +3,58 @@ import { nextRun, previousRun, nextRuns, isMatch } from "../src/scheduler.js";
 import { getDaysInMonth } from "../src/matcher.js";
 
 describe("scheduler", () => {
+  describe("Invalid cron expression handling", () => {
+    describe("nextRun", () => {
+      it("should throw for invalid cron expression", () => {
+        expect(() => nextRun("invalid")).toThrow('Invalid cron expression: "invalid"');
+      });
+
+      it("should throw for empty string", () => {
+        expect(() => nextRun("")).toThrow('Invalid cron expression: ""');
+      });
+
+      it("should throw for wrong number of fields", () => {
+        expect(() => nextRun("* * *")).toThrow('Invalid cron expression: "* * *"');
+      });
+
+      it("should throw for impossible day/month combination", () => {
+        expect(() => nextRun("0 0 31 2 *")).toThrow('Invalid cron expression: "0 0 31 2 *"');
+      });
+    });
+
+    describe("previousRun", () => {
+      it("should throw for invalid cron expression", () => {
+        expect(() => previousRun("invalid")).toThrow('Invalid cron expression: "invalid"');
+      });
+
+      it("should throw for empty string", () => {
+        expect(() => previousRun("")).toThrow('Invalid cron expression: ""');
+      });
+    });
+
+    describe("nextRuns", () => {
+      it("should throw for invalid cron expression", () => {
+        expect(() => nextRuns("invalid", 5)).toThrow('Invalid cron expression: "invalid"');
+      });
+
+      it("should throw for empty string", () => {
+        expect(() => nextRuns("", 3)).toThrow('Invalid cron expression: ""');
+      });
+    });
+
+    describe("isMatch", () => {
+      it("should throw for invalid cron expression", () => {
+        const date = new Date("2026-03-15T09:00:00Z");
+        expect(() => isMatch("invalid", date)).toThrow('Invalid cron expression: "invalid"');
+      });
+
+      it("should throw for empty string", () => {
+        const date = new Date("2026-03-15T09:00:00Z");
+        expect(() => isMatch("", date)).toThrow('Invalid cron expression: ""');
+      });
+    });
+  });
+
   describe("Basic functionality", () => {
     describe("nextRun", () => {
       it("should find next run for simple expression", () => {
@@ -550,6 +602,41 @@ describe("scheduler", () => {
         // March 2021: DST started March 14, so EDT (UTC-4)
         expect(next.getUTCHours()).toBe(14); // 10 AM EDT = 2 PM UTC
         expect(next.getTime()).toBeGreaterThan(from.getTime());
+      });
+    });
+
+    describe("previousRun with seconds in current minute", () => {
+      it("should NOT return the current minute when called mid-minute", () => {
+        // At 9:01:30, previousRun should return 9:00, not 9:01
+        // because we subtract 1 minute after zeroing seconds
+        const from = new Date("2025-03-15T09:01:30Z");
+        const prev = previousRun("* * * * *", { from });
+
+        expect(prev.getUTCHours()).toBe(9);
+        expect(prev.getUTCMinutes()).toBe(0); // 9:00, not 9:01
+        expect(prev.getUTCSeconds()).toBe(0);
+        expect(prev.getTime()).toBeLessThan(from.getTime());
+      });
+
+      it("should return previous minute even at 9:01:00 exactly (start of minute)", () => {
+        // At 9:01:00, after zeroing seconds it's still 9:01:00
+        // Then subtracting 1 minute gives 9:00:00
+        const from = new Date("2025-03-15T09:01:00Z");
+        const prev = previousRun("* * * * *", { from });
+
+        expect(prev.getUTCHours()).toBe(9);
+        expect(prev.getUTCMinutes()).toBe(0);
+        expect(prev.getUTCSeconds()).toBe(0);
+      });
+
+      it("should return current minute when called at minute boundary (9:01:00.001)", () => {
+        // At 9:00:00.001, after zeroing seconds it's 9:00:00
+        // Then subtracting 1 minute gives 8:59:00
+        const from = new Date("2025-03-15T09:00:00.001Z");
+        const prev = previousRun("* * * * *", { from });
+
+        expect(prev.getUTCHours()).toBe(8);
+        expect(prev.getUTCMinutes()).toBe(59);
       });
     });
 
@@ -1381,24 +1468,30 @@ describe("scheduler", () => {
     });
 
     describe("invalid timezone", () => {
-      it("should return null for invalid timezone in nextRun", () => {
+      it("should throw for invalid timezone in nextRun", () => {
         const from = new Date("2026-03-15T14:00:00Z");
-        expect(nextRun("0 9 * * *", { from, timezone: "Invalid/Timezone" })).toBeNull();
+        expect(() => nextRun("0 9 * * *", { from, timezone: "Invalid/Timezone" })).toThrow(
+          'Invalid timezone: "Invalid/Timezone"',
+        );
       });
 
-      it("should return null for invalid timezone in previousRun", () => {
+      it("should throw for invalid timezone in previousRun", () => {
         const from = new Date("2026-03-15T14:00:00Z");
-        expect(previousRun("0 9 * * *", { from, timezone: "NotATimezone" })).toBeNull();
+        expect(() => previousRun("0 9 * * *", { from, timezone: "NotATimezone" })).toThrow(
+          'Invalid timezone: "NotATimezone"',
+        );
       });
 
-      it("should return false for invalid timezone in isMatch", () => {
+      it("should throw for invalid timezone in isMatch", () => {
         const date = new Date("2026-03-15T09:00:00Z");
-        expect(isMatch("0 9 * * *", date, { timezone: "Fake/Zone" })).toBe(false);
+        expect(() => isMatch("0 9 * * *", date, { timezone: "Fake/Zone" })).toThrow(
+          'Invalid timezone: "Fake/Zone"',
+        );
       });
 
-      it("should return null for empty timezone string in nextRun", () => {
+      it("should throw for empty timezone string in nextRun", () => {
         const from = new Date("2026-03-15T14:00:00Z");
-        expect(nextRun("0 9 * * *", { from, timezone: "" })).toBeNull();
+        expect(() => nextRun("0 9 * * *", { from, timezone: "" })).toThrow('Invalid timezone: ""');
       });
     });
   });

@@ -1,12 +1,12 @@
 # cron-fast
 
-[![npm version](https://badge.fury.io/js/cron-fast.svg)](https://www.npmjs.com/package/cron-fast)
-[![npm provenance](https://img.shields.io/badge/provenance-attested-brightgreen)](https://www.npmjs.com/package/cron-fast)
+[![npm version](https://img.shields.io/npm/v/cron-fast.svg?logo=npm)](https://www.npmjs.com/package/cron-fast)
+[![npm provenance](https://img.shields.io/badge/provenance-attested-brightgreen?logo=npm)](https://www.npmjs.com/package/cron-fast)
 [![JSR](https://jsr.io/badges/@kbilkis/cron-fast)](https://jsr.io/@kbilkis/cron-fast)
 [![JSR Score](https://jsr.io/badges/@kbilkis/cron-fast/score)](https://jsr.io/@kbilkis/cron-fast)
 [![CI](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml/badge.svg)](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/github/kbilkis/cron-fast/graph/badge.svg?token=5MXFKS45XV)](https://codecov.io/github/kbilkis/cron-fast)
-[![npm bundle size](https://img.shields.io/bundlejs/size/cron-fast)](https://bundlejs.com/?q=cron-fast)
+[![codecov](https://codecov.io/github/kbilkis/cron-fast/graph/badge.svg)](https://codecov.io/github/kbilkis/cron-fast)
+[![npm bundle size](https://img.shields.io/bundlejs/size/cron-fast?logo=esbuild)](https://bundlejs.com/?q=cron-fast)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Fast and tiny JavaScript/TypeScript cron parser with timezone support.** Works everywhere: Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.
@@ -71,7 +71,7 @@ if (isValid("0 9 * * *")) {
 
 ### `nextRun(expression, options?)`
 
-Get the next execution time for a cron expression.
+Get the next execution time for a cron expression. **Throws** if the expression or timezone is invalid.
 
 ```typescript
 nextRun("0 9 * * *"); // Next 9:00 AM UTC
@@ -81,7 +81,7 @@ nextRun("0 9 * * *", { from: new Date("2026-03-15") }); // Next after Mar 15, 20
 
 ### `previousRun(expression, options?)`
 
-Get the previous execution time.
+Get the previous execution time. **Throws** if the expression or timezone is invalid.
 
 ```typescript
 previousRun("0 9 * * *"); // Last 9:00 AM UTC
@@ -90,7 +90,7 @@ previousRun("0 9 * * *", { timezone: "Asia/Tokyo" });
 
 ### `nextRuns(expression, count, options?)`
 
-Get next N execution times.
+Get next N execution times. **Throws** if the expression or timezone is invalid.
 
 ```typescript
 nextRuns("0 9 * * *", 5); // Next 5 occurrences
@@ -107,7 +107,7 @@ isValid("invalid"); // false
 
 ### `isMatch(expression, date, options?)`
 
-Check if a date matches the cron expression.
+Check if a date matches the cron expression. **Throws** if the expression or timezone is invalid.
 
 ```typescript
 isMatch("0 9 * * *", new Date("2026-03-15T09:00:00Z")); // true
@@ -230,9 +230,17 @@ const runsNY = nextRuns("0 9 * * 1-5", 5, { timezone: "America/New_York" });
 ### Validation and Parsing
 
 ```typescript
-// Validate before using
+// Functions throw on invalid input, but you can pre-validate user input
 if (!isValid(userInput)) {
-  throw new Error("Invalid cron expression");
+  console.log("Invalid cron expression");
+  return;
+}
+
+// Or use try/catch
+try {
+  const next = nextRun(userInput);
+} catch (e) {
+  console.log("Invalid cron expression");
 }
 
 // Parse to see what it means
@@ -264,9 +272,9 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 
 ## Tips & Gotchas
 
+- **Invalid input throws**: `nextRun`, `previousRun`, `nextRuns`, and `isMatch` throw an error for invalid cron expressions or invalid timezones. Use `isValid()` to pre-validate user input, or wrap calls in try/catch.
 - **Timezone handling**: The cron expression is interpreted in the timezone you specify, but the returned Date is always in UTC
 - **Daylight saving time**: Use IANA timezone names (like "America/New_York") instead of abbreviations (like "EST")
-- **Validation**: Always check `isValid()` before parsing user input
 - **Day 0 and 7**: Both represent Sunday in the day-of-week field
 - **Ranges are inclusive**: `1-5` includes both 1 and 5
 

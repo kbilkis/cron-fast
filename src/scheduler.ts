@@ -31,41 +31,41 @@ const DIR = {
   },
 } as const;
 
-/** Get the next execution time for a cron expression. Returns null if invalid or no match found. */
-export function nextRun(expression: string, options?: CronOptions): Date | null {
+/** Get the next execution time for a cron expression. Throws if expression or timezone is invalid, or if no match is found within iteration limit. */
+export function nextRun(expression: string, options?: CronOptions): Date {
   const parsed = parse(expression);
-  if (!parsed) return null;
+  if (!parsed) throw new Error(`Invalid cron expression: "${expression}"`);
 
   const from = options?.from || new Date();
   const tz = options?.timezone;
 
   const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
-  if (!start) return null;
+  if (!start) throw new Error(`Invalid timezone: "${tz}"`);
 
   start.setUTCSeconds(0, 0);
   start.setUTCMinutes(start.getUTCMinutes() + 1);
 
-  return findMatch(parsed, start, "next", tz);
+  return findMatch(parsed, start, "next", tz, expression);
 }
 
-/** Get the previous execution time for a cron expression. Returns null if invalid or no match found. */
-export function previousRun(expression: string, options?: CronOptions): Date | null {
+/** Get the previous execution time for a cron expression. Throws if expression or timezone is invalid, or if no match is found within iteration limit. */
+export function previousRun(expression: string, options?: CronOptions): Date {
   const parsed = parse(expression);
-  if (!parsed) return null;
+  if (!parsed) throw new Error(`Invalid cron expression: "${expression}"`);
 
   const from = options?.from || new Date();
   const tz = options?.timezone;
 
   const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
-  if (!start) return null;
+  if (!start) throw new Error(`Invalid timezone: "${tz}"`);
 
   start.setUTCSeconds(0, 0);
   start.setUTCMinutes(start.getUTCMinutes() - 1);
 
-  return findMatch(parsed, start, "prev", tz);
+  return findMatch(parsed, start, "prev", tz, expression);
 }
 
-/** Get next N execution times. Returns empty array if invalid. */
+/** Get next N execution times. Throws if expression or timezone is invalid. */
 export function nextRuns(expression: string, count: number, options?: CronOptions): Date[] {
   if (count <= 0) return [];
 
@@ -74,40 +74,45 @@ export function nextRuns(expression: string, count: number, options?: CronOption
 
   for (let i = 0; i < count; i++) {
     const next = nextRun(expression, { ...options, from: current });
-    if (!next) break;
     results.push(next);
     current = new Date(next.getTime() + ONE_MINUTE_MS);
   }
   return results;
 }
 
-/** Check if a date matches the cron expression. Returns false if invalid. */
+/** Check if a date matches the cron expression. Throws if expression or timezone is invalid. */
 export function isMatch(
   expression: string,
   date: Date,
   options?: Pick<CronOptions, "timezone">,
 ): boolean {
   const parsed = parse(expression);
-  if (!parsed) return false;
+  if (!parsed) throw new Error(`Invalid cron expression: "${expression}"`);
 
-  const checkDate =
-    options?.timezone !== undefined ? convertToTimezone(date, options.timezone) : new Date(date);
+  const tz = options?.timezone;
+  const checkDate = tz !== undefined ? convertToTimezone(date, tz) : new Date(date);
 
-  if (!checkDate) return false;
+  if (!checkDate) throw new Error(`Invalid timezone: "${tz}"`);
   return matches(parsed, checkDate);
 }
 
 /** Find matching time using smart field-increment algorithm */
-function findMatch(parsed: ParsedCron, start: Date, dir: Direction, tz?: string): Date | null {
+function findMatch(
+  parsed: ParsedCron,
+  start: Date,
+  dir: Direction,
+  tz?: string,
+  expression?: string,
+): Date {
   const current = new Date(start);
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     if (matches(parsed, current)) {
-      return tz !== undefined ? convertFromTimezone(current, tz) : current;
+      return tz !== undefined ? convertFromTimezone(current, tz)! : current;
     }
     advanceDate(parsed, current, dir);
   }
-  return null;
+  throw new Error(`No match found for "${expression}" within iteration limit`);
 }
 
 /**
