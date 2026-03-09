@@ -85,7 +85,7 @@ export function parse(expression: string): ParsedCron {
     hour,
     day,
     month: month.map((m) => m - 1),
-    weekday: weekdays.sort((a, b) => a - b),
+    weekday: weekdays,
     dayIsWildcard: dayStr.trim() === "*",
     weekdayIsWildcard: weekdayStr.trim() === "*",
   };
@@ -130,7 +130,7 @@ function parseField(
 
   if (field === "*") {
     for (let i = min; i <= max; i++) values.push(i);
-    return values.slice().sort((a, b) => a - b);
+    return values;
   }
 
   const parts = field.split(",");
@@ -189,7 +189,7 @@ function parseField(
   }
 
   if (values.length === 0) return null;
-  return [...new Set(values)].sort((a, b) => a - b);
+  return values.sort((a, b) => a - b).filter((v, i, arr) => i === 0 || arr[i - 1] !== v);
 }
 
 /**
