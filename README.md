@@ -7,6 +7,7 @@
 [![CI](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml/badge.svg)](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/github/kbilkis/cron-fast/graph/badge.svg)](https://codecov.io/github/kbilkis/cron-fast)
 [![npm bundle size](https://img.shields.io/bundlejs/size/cron-fast?logo=esbuild)](https://bundlejs.com/?q=cron-fast)
+[![Snyk](https://snyk.io/test/npm/cron-fast/badge.svg)](https://snyk.io/test/npm/cron-fast)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Fast and tiny JavaScript/TypeScript cron parser with timezone support.** Works everywhere: Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.
@@ -173,31 +174,31 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v2.0.1):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v2.1.0):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 21.86 KB | 10.12 KB | **3.61 KB** |
-| `nextRun only                                        ` | 13.12 KB | 6.03 KB  | **2.21 KB** |
-| `previousRun only                                    ` | 13.13 KB | 6.03 KB  | **2.22 KB** |
-| `nextRuns only                                       ` | 13.50 KB | 6.18 KB  | **2.28 KB** |
-| `isValid only                                        ` | 4.44 KB  | 2.23 KB  | **980 B**   |
-| `parse only                                          ` | 4.33 KB  | 2.19 KB  | **956 B**   |
-| `describe only                                       ` | 11.55 KB | 5.58 KB  | **2.11 KB** |
-| `isMatch only                                        ` | 6.35 KB  | 3.15 KB  | **1.33 KB** |
-| `Validation only (isValid + parse)                   ` | 4.45 KB  | 2.24 KB  | **981 B**   |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.91 KB | 6.36 KB  | **2.30 KB** |
+| `Full bundle (all exports)                           ` | 21.84 KB | 10.12 KB | **3.61 KB** |
+| `nextRun only                                        ` | 13.10 KB | 6.03 KB  | **2.22 KB** |
+| `previousRun only                                    ` | 13.11 KB | 6.03 KB  | **2.22 KB** |
+| `nextRuns only                                       ` | 13.49 KB | 6.18 KB  | **2.28 KB** |
+| `isValid only                                        ` | 4.42 KB  | 2.23 KB  | **986 B**   |
+| `parse only                                          ` | 4.31 KB  | 2.18 KB  | **963 B**   |
+| `describe only                                       ` | 11.53 KB | 5.58 KB  | **2.11 KB** |
+| `isMatch only                                        ` | 6.33 KB  | 3.15 KB  | **1.33 KB** |
+| `Validation only (isValid + parse)                   ` | 4.43 KB  | 2.23 KB  | **988 B**   |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.89 KB | 6.36 KB  | **2.30 KB** |
 
 Import only what you need:
 
 ```typescript
-// Small bundle - only validation (~900 B gzipped)
+// Small bundle - only validation
 import { isValid } from "cron-fast";
 
-// Medium bundle - one function + dependencies (~2 KB gzipped)
+// Medium bundle - one function + dependencies
 import { nextRun } from "cron-fast";
 
-// Full bundle - everything (~2.3 KB gzipped)
+// Full bundle - everything
 import * as cron from "cron-fast";
 ```
 
@@ -283,18 +284,26 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v2.0.1, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
+> Tested with cron-fast v2.1.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
 
 | Operation    | cron-fast      | croner    | cron-parser | cron-schedule |
 | ------------ | -------------- | --------- | ----------- | ------------- |
-| Next run     | **367k ops/s** | 30k ops/s | 33k ops/s   | 375k ops/s    |
-| Previous run | **409k ops/s** | 31k ops/s | 37k ops/s   | 386k ops/s    |
-| Validation   | **555k ops/s** | 32k ops/s | 94k ops/s   | 436k ops/s    |
-| Parsing      | **543k ops/s** | 32k ops/s | 92k ops/s   | 446k ops/s    |
+| Next run     | **459k ops/s** | 31k ops/s | 32k ops/s   | 374k ops/s    |
+| Previous run | **512k ops/s** | 31k ops/s | 37k ops/s   | 388k ops/s    |
+| Validation   | **733k ops/s** | 34k ops/s | 92k ops/s   | 453k ops/s    |
+| Parsing      | **735k ops/s** | 34k ops/s | 92k ops/s   | 458k ops/s    |
 
 See [detailed benchmarks and feature comparison](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
 Run benchmarks yourself: `pnpm benchmark`
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## Contributors
+
+- [Kasparas Bilkis](https://github.com/kbilkis) - Creator and maintainer
 
 ## License
 

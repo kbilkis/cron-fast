@@ -124,11 +124,11 @@ function parseField(
   max: number,
   names?: Record<string, number>,
 ): number[] | null {
-  const values = new Set<number>();
+  const values: number[] = [];
 
   if (field === "*") {
-    for (let i = min; i <= max; i++) values.add(i);
-    return Array.from(values).sort((a, b) => a - b);
+    for (let i = min; i <= max; i++) values.push(i);
+    return values.slice().sort((a, b) => a - b);
   }
 
   const parts = field.split(",");
@@ -160,7 +160,7 @@ function parseField(
       }
 
       for (let i = start; i <= end; i += step) {
-        if (i >= min && i <= max) values.add(i);
+        if (i >= min && i <= max) values.push(i);
       }
     }
     // Handle ranges (e.g., 1-5)
@@ -174,7 +174,7 @@ function parseField(
       if (start > end) return null;
 
       for (let i = start; i <= end; i++) {
-        if (i >= min && i <= max) values.add(i);
+        if (i >= min && i <= max) values.push(i);
       }
     }
     // Handle single values
@@ -182,12 +182,12 @@ function parseField(
       const value = parseValue(part, names);
       if (value === null) return null;
       if (value < min || value > max) return null;
-      values.add(value);
+      values.push(value);
     }
   }
 
-  if (values.size === 0) return null;
-  return Array.from(values).sort((a, b) => a - b);
+  if (values.length === 0) return null;
+  return [...new Set(values)].sort((a, b) => a - b);
 }
 
 /**
