@@ -1471,27 +1471,27 @@ describe("scheduler", () => {
       it("should throw for invalid timezone in nextRun", () => {
         const from = new Date("2026-03-15T14:00:00Z");
         expect(() => nextRun("0 9 * * *", { from, timezone: "Invalid/Timezone" })).toThrow(
-          'Invalid timezone: "Invalid/Timezone"',
+          "Invalid time zone specified",
         );
       });
 
       it("should throw for invalid timezone in previousRun", () => {
         const from = new Date("2026-03-15T14:00:00Z");
         expect(() => previousRun("0 9 * * *", { from, timezone: "NotATimezone" })).toThrow(
-          'Invalid timezone: "NotATimezone"',
+          "Invalid time zone specified",
         );
       });
 
       it("should throw for invalid timezone in isMatch", () => {
         const date = new Date("2026-03-15T09:00:00Z");
         expect(() => isMatch("0 9 * * *", date, { timezone: "Fake/Zone" })).toThrow(
-          'Invalid timezone: "Fake/Zone"',
+          "Invalid time zone specified",
         );
       });
 
       it("should throw for empty timezone string in nextRun", () => {
         const from = new Date("2026-03-15T14:00:00Z");
-        expect(() => nextRun("0 9 * * *", { from, timezone: "" })).toThrow('Invalid timezone: ""');
+        expect(() => nextRun("0 9 * * *", { from, timezone: "" })).toThrow("Invalid time zone");
       });
     });
   });
