@@ -1,6 +1,6 @@
 # Benchmark & Feature Comparison
 
-> Tested with deno v2.6.8, cron-fast v2.1.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0, cron-validate v1.5.3
+> Tested with deno v2.6.8, cron-fast v2.2.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0, cron-validate v1.5.3
 > Tested on MacBook M1 pro
 
 ## Performance Benchmarks
@@ -11,39 +11,39 @@ Tested with 1 second per test.
 
 | Library       | Avg ops/sec | vs cron-fast |
 | ------------- | ----------- | ------------ |
-| **cron-fast** | ~384k       | baseline     |
-| cron-schedule | ~341k       | 1.1x faster  |
-| croner        | ~29k        | 13.1x faster |
-| cron-parser   | ~23k        | 17.0x faster |
+| **cron-fast** | ~478k       | baseline     |
+| cron-schedule | ~405k       | 1.2x faster  |
+| croner        | ~32k        | 15.1x faster |
+| cron-parser   | ~34k        | 14.1x faster |
 
 ### Previous Execution Time
 
 | Library       | Avg ops/sec | vs cron-fast |
 | ------------- | ----------- | ------------ |
-| **cron-fast** | ~423k       | baseline     |
-| cron-schedule | ~350k       | 1.2x faster  |
-| croner        | ~30k        | 14.0x faster |
-| cron-parser   | ~26k        | 16.5x faster |
+| **cron-fast** | ~545k       | baseline     |
+| cron-schedule | ~426k       | 1.3x faster  |
+| croner        | ~32k        | 17.0x faster |
+| cron-parser   | ~39k        | 13.8x faster |
 
 ### Validation
 
 | Library       | Avg ops/sec | vs cron-fast |
 | ------------- | ----------- | ------------ |
-| **cron-fast** | ~612k       | baseline     |
-| cron-validate | ~506k       | 1.2x faster  |
-| cron-schedule | ~395k       | 1.5x faster  |
-| cron-parser   | ~63k        | 9.8x faster  |
-| croner        | ~33k        | 18.6x faster |
+| **cron-fast** | ~775k       | baseline     |
+| cron-validate | ~638k       | 1.2x faster  |
+| cron-schedule | ~479k       | 1.6x faster  |
+| cron-parser   | ~99k        | 7.9x faster  |
+| croner        | ~34k        | 22.8x faster |
 
 ### Parsing
 
 | Library       | Avg ops/sec | vs cron-fast |
 | ------------- | ----------- | ------------ |
-| **cron-fast** | ~611k       | baseline     |
-| cron-validate | ~506k       | 1.2x faster  |
-| cron-schedule | ~396k       | 1.5x faster  |
-| cron-parser   | ~62k        | 9.8x faster  |
-| croner        | ~33k        | 18.6x faster |
+| **cron-fast** | ~776k       | baseline     |
+| cron-validate | ~629k       | 1.2x faster  |
+| cron-schedule | ~473k       | 1.6x faster  |
+| cron-parser   | ~97k        | 8.0x faster  |
+| croner        | ~34k        | 23.0x faster |
 
 Run benchmarks yourself: `pnpm benchmark:deno`
 
@@ -53,13 +53,13 @@ Run benchmarks yourself: `pnpm benchmark:deno`
 
 | Test Case                   | cron-fast | cron-schedule | croner | cron-parser |
 | --------------------------- | --------: | ------------: | -----: | ----------: |
-| Every minute                |     ~333k |       ~126k ✓ | ~29k ✓ |      ~20k ✓ |
-| Sparse: First of month      |     ~434k |         ~445k | ~29k ✓ |      ~13k ✓ |
-| Sparse: 31st (skips months) |     ~420k |         ~448k | ~28k ✓ |       ~5k ✓ |
-| Step: Every 15 minutes      |     ~352k |       ~250k ✓ | ~30k ✓ |      ~35k ✓ |
-| Specific: 9 AM daily        |     ~421k |       ~325k ✓ | ~31k ✓ |      ~29k ✓ |
-| OR-mode: 15th OR Monday     |     ~333k |       ~487k ✗ | ~29k ✓ |      ~26k ✓ |
-| Weekdays: Mon-Fri 9 AM      |     ~394k |       ~306k ✓ | ~28k ✓ |      ~30k ✓ |
+| Every minute                |     ~355k |       ~149k ✓ | ~33k ✓ |      ~31k ✓ |
+| Sparse: First of month      |     ~576k |         ~540k | ~33k ✓ |      ~18k ✓ |
+| Sparse: 31st (skips months) |     ~517k |         ~542k | ~30k ✓ |       ~7k ✓ |
+| Step: Every 15 minutes      |     ~444k |       ~275k ✓ | ~33k ✓ |      ~55k ✓ |
+| Specific: 9 AM daily        |     ~521k |       ~375k ✓ | ~32k ✓ |      ~44k ✓ |
+| OR-mode: 15th OR Monday     |     ~444k |       ~593k ✗ | ~30k ✓ |      ~37k ✓ |
+| Weekdays: Mon-Fri 9 AM      |     ~488k |       ~358k ✓ | ~30k ✓ |      ~45k ✓ |
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
 
@@ -67,13 +67,13 @@ Run benchmarks yourself: `pnpm benchmark:deno`
 
 | Test Case                   | cron-fast | cron-schedule | croner | cron-parser |
 | --------------------------- | --------: | ------------: | -----: | ----------: |
-| Every minute                |     ~343k |       ~179k ✓ | ~30k ✓ |      ~23k ✓ |
-| Sparse: First of month      |     ~475k |         ~452k | ~30k ✓ |       ~6k ✓ |
-| Sparse: 31st (skips months) |     ~410k |         ~408k | ~30k ✓ |       ~6k ✓ |
-| Step: Every 15 minutes      |     ~346k |       ~243k ✓ | ~31k ✓ |      ~34k ✓ |
-| Specific: 9 AM daily        |     ~413k |       ~332k ✓ | ~31k ✓ |      ~33k ✓ |
-| OR-mode: 15th OR Monday     |     ~571k |       ~517k ✓ | ~31k ✓ |      ~44k ✓ |
-| Weekdays: Mon-Fri 9 AM      |     ~404k |       ~321k ✓ | ~29k ✓ |      ~34k ✓ |
+| Every minute                |     ~394k |       ~190k ✓ | ~33k ✓ |      ~36k ✓ |
+| Sparse: First of month      |     ~641k |       ~577k ✓ | ~31k ✓ |       ~9k ✓ |
+| Sparse: 31st (skips months) |     ~524k |         ~519k | ~32k ✓ |       ~8k ✓ |
+| Step: Every 15 minutes      |     ~441k |       ~278k ✓ | ~33k ✓ |      ~57k ✓ |
+| Specific: 9 AM daily        |     ~541k |       ~382k ✓ | ~32k ✓ |      ~50k ✓ |
+| OR-mode: 15th OR Monday     |     ~764k |       ~668k ✓ | ~32k ✓ |      ~66k ✓ |
+| Weekdays: Mon-Fri 9 AM      |     ~511k |       ~372k ✓ | ~31k ✓ |      ~50k ✓ |
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
 
@@ -81,13 +81,13 @@ Run benchmarks yourself: `pnpm benchmark:deno`
 
 | Test Case       | cron-fast | cron-schedule | cron-parser | croner | cron-validate |
 | --------------- | --------: | ------------: | ----------: | -----: | ------------: |
-| \* \* \* \* \*  |     ~371k |       ~189k ✓ |      ~28k ✓ | ~33k ✓ |       ~484k ✗ |
-| 0 0 1 \* \*     |     ~738k |       ~498k ✓ |      ~82k ✓ | ~33k ✓ |       ~513k ✓ |
-| 0 12 31 \* \*   |     ~688k |       ~510k ✓ |      ~82k ✓ | ~33k ✓ |       ~515k ✓ |
-| _/15 _ \* \* \* |     ~474k |       ~266k ✓ |      ~42k ✓ | ~33k ✓ |         ~523k |
-| 0 9 \* \* \*    |     ~602k |       ~355k ✓ |      ~55k ✓ | ~33k ✓ |       ~500k ✓ |
-| 0 9 15 \* 1     |     ~865k |       ~602k ✓ |      ~93k ✓ | ~33k ✓ |       ~522k ✓ |
-| 0 9 \* \* 1-5   |     ~546k |       ~348k ✓ |      ~57k ✓ | ~32k ✓ |       ~488k ✓ |
+| \* \* \* \* \*  |     ~440k |       ~202k ✓ |      ~46k ✓ | ~34k ✓ |       ~606k ✗ |
+| 0 0 1 \* \*     |     ~977k |       ~630k ✓ |     ~128k ✓ | ~34k ✓ |       ~649k ✓ |
+| 0 12 31 \* \*   |     ~897k |       ~627k ✓ |     ~127k ✓ | ~34k ✓ |       ~643k ✓ |
+| _/15 _ \* \* \* |     ~546k |       ~291k ✓ |      ~69k ✓ | ~34k ✓ |       ~676k ✗ |
+| 0 9 \* \* \*    |     ~725k |       ~403k ✓ |      ~89k ✓ | ~34k ✓ |       ~618k ✓ |
+| 0 9 15 \* 1     |    ~1168k |       ~785k ✓ |     ~140k ✓ | ~33k ✓ |       ~655k ✓ |
+| 0 9 \* \* 1-5   |     ~669k |       ~412k ✓ |      ~91k ✓ | ~34k ✓ |         ~620k |
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
 
@@ -95,12 +95,12 @@ Run benchmarks yourself: `pnpm benchmark:deno`
 
 | Test Case       | cron-fast | cron-schedule | cron-parser | croner | cron-validate |
 | --------------- | --------: | ------------: | ----------: | -----: | ------------: |
-| \* \* \* \* \*  |     ~387k |       ~188k ✓ |      ~28k ✓ | ~33k ✓ |       ~480k ✗ |
-| 0 0 1 \* \*     |     ~710k |       ~508k ✓ |      ~81k ✓ | ~33k ✓ |       ~515k ✓ |
-| 0 12 31 \* \*   |     ~682k |       ~510k ✓ |      ~81k ✓ | ~32k ✓ |       ~510k ✓ |
-| _/15 _ \* \* \* |     ~475k |       ~267k ✓ |      ~42k ✓ | ~33k ✓ |         ~526k |
-| 0 9 \* \* \*    |     ~598k |       ~353k ✓ |      ~55k ✓ | ~33k ✓ |       ~501k ✓ |
-| 0 9 15 \* 1     |     ~876k |       ~601k ✓ |      ~93k ✓ | ~33k ✓ |       ~524k ✓ |
-| 0 9 \* \* 1-5   |     ~548k |       ~343k ✓ |      ~56k ✓ | ~32k ✓ |       ~490k ✓ |
+| \* \* \* \* \*  |     ~437k |       ~201k ✓ |      ~46k ✓ | ~35k ✓ |       ~598k ✗ |
+| 0 0 1 \* \*     |     ~982k |       ~631k ✓ |     ~126k ✓ | ~33k ✓ |       ~649k ✓ |
+| 0 12 31 \* \*   |     ~895k |       ~633k ✓ |     ~127k ✓ | ~34k ✓ |       ~636k ✓ |
+| _/15 _ \* \* \* |     ~550k |       ~294k ✓ |      ~68k ✓ | ~33k ✓ |       ~678k ✗ |
+| 0 9 \* \* \*    |     ~748k |       ~367k ✓ |      ~88k ✓ | ~35k ✓ |       ~615k ✓ |
+| 0 9 15 \* 1     |    ~1175k |       ~793k ✓ |     ~140k ✓ | ~34k ✓ |       ~625k ✓ |
+| 0 9 \* \* 1-5   |     ~642k |       ~395k ✓ |      ~84k ✓ | ~32k ✓ |         ~598k |
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)

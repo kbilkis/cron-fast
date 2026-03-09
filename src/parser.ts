@@ -76,14 +76,16 @@ export function parse(expression: string): ParsedCron {
       `Invalid cron expression: "${expression}" - invalid weekday field "${weekdayStr}"`,
     );
 
-  const weekdays = weekdayRaw.map((d) => (d === 7 ? 0 : d));
+  const weekdays = weekdayRaw
+    .filter((d) => d !== 7 || !weekdayRaw.includes(0))
+    .map((d) => (d === 7 ? 0 : d));
 
   const parsed: ParsedCron = {
     minute,
     hour,
     day,
     month: month.map((m) => m - 1),
-    weekday: Array.from(new Set(weekdays)).sort((a, b) => a - b),
+    weekday: weekdays.sort((a, b) => a - b),
     dayIsWildcard: dayStr.trim() === "*",
     weekdayIsWildcard: weekdayStr.trim() === "*",
   };

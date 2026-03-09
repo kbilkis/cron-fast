@@ -14,14 +14,20 @@
 
 ## Features
 
+- **Parse & validate** - Convert cron expressions to structured data and check validity
+- **Get execution times** - Calculate next, previous, or multiple scheduled runs
+- **Match dates** - Check if a date matches a cron expression
+- **Describe** - Convert cron expressions to human-readable text (e.g., "Every 5 minutes")
+- **Timezone support** - Full IANA timezone support using native `Intl` API
+
+## Why cron-fast?
+
 - **Universal** - Works in Node.js, Deno, Bun, Cloudflare Workers, and browsers
-- **Lightweight** - Zero dependencies
-- **Fast** - Optimal field increment algorithm
+- **Zero dependencies** - Lightweight and secure
+- **Fast** - Optimal field increment algorithm with 10x+ performance vs alternatives
 - **Tree-shakeable** - Import only what you need
-- **Timezone support** - Built-in timezone handling using native `Intl`
 - **Modern** - ESM + CJS, TypeScript-first
 - **Fully tested** - Comprehensive test coverage across all runtimes
-- **Simple API** - Clean, intuitive interface
 - **ISO 8601 compatible** - Works with all standard date formats
 
 ## Installation
@@ -174,20 +180,20 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v2.1.0):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v2.2.0):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 21.84 KB | 10.12 KB | **3.61 KB** |
-| `nextRun only                                        ` | 13.10 KB | 6.03 KB  | **2.22 KB** |
-| `previousRun only                                    ` | 13.11 KB | 6.03 KB  | **2.22 KB** |
-| `nextRuns only                                       ` | 13.49 KB | 6.18 KB  | **2.28 KB** |
-| `isValid only                                        ` | 4.42 KB  | 2.23 KB  | **986 B**   |
-| `parse only                                          ` | 4.31 KB  | 2.18 KB  | **963 B**   |
-| `describe only                                       ` | 11.53 KB | 5.58 KB  | **2.11 KB** |
-| `isMatch only                                        ` | 6.33 KB  | 3.15 KB  | **1.33 KB** |
-| `Validation only (isValid + parse)                   ` | 4.43 KB  | 2.23 KB  | **988 B**   |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.89 KB | 6.36 KB  | **2.30 KB** |
+| `Full bundle (all exports)                           ` | 21.87 KB | 10.13 KB | **3.62 KB** |
+| `nextRun only                                        ` | 13.13 KB | 6.04 KB  | **2.23 KB** |
+| `previousRun only                                    ` | 13.14 KB | 6.04 KB  | **2.23 KB** |
+| `nextRuns only                                       ` | 13.51 KB | 6.19 KB  | **2.29 KB** |
+| `isValid only                                        ` | 4.45 KB  | 2.24 KB  | **992 B**   |
+| `parse only                                          ` | 4.34 KB  | 2.20 KB  | **969 B**   |
+| `describe only                                       ` | 11.56 KB | 5.59 KB  | **2.11 KB** |
+| `isMatch only                                        ` | 6.36 KB  | 3.16 KB  | **1.34 KB** |
+| `Validation only (isValid + parse)                   ` | 4.46 KB  | 2.25 KB  | **993 B**   |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.92 KB | 6.37 KB  | **2.31 KB** |
 
 Import only what you need:
 
@@ -284,14 +290,14 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v2.1.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
+> Tested with cron-fast v2.2.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
 
 | Operation    | cron-fast      | croner    | cron-parser | cron-schedule |
 | ------------ | -------------- | --------- | ----------- | ------------- |
-| Next run     | **459k ops/s** | 31k ops/s | 32k ops/s   | 374k ops/s    |
-| Previous run | **512k ops/s** | 31k ops/s | 37k ops/s   | 388k ops/s    |
-| Validation   | **733k ops/s** | 34k ops/s | 92k ops/s   | 453k ops/s    |
-| Parsing      | **735k ops/s** | 34k ops/s | 92k ops/s   | 458k ops/s    |
+| Next run     | **484k ops/s** | 30k ops/s | 33k ops/s   | 380k ops/s    |
+| Previous run | **551k ops/s** | 31k ops/s | 38k ops/s   | 393k ops/s    |
+| Validation   | **651k ops/s** | 28k ops/s | 78k ops/s   | 372k ops/s    |
+| Parsing      | **718k ops/s** | 29k ops/s | 86k ops/s   | 430k ops/s    |
 
 See [detailed benchmarks and feature comparison](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
