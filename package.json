@@ -80,7 +80,7 @@
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.13.2",
+    "@cloudflare/vitest-pool-workers": "^0.14.1",
     "@types/node": "^25.5.0",
     "@vitest/coverage-v8": "^4.1.0",
     "cron-parser": "^5.5.0",
