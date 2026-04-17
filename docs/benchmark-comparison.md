@@ -1,4 +1,4 @@
-# Benchmark & Feature Comparison
+# Benchmark
 
 cron-fast has been benchmarked across multiple JavaScript runtimes to ensure consistent performance.
 

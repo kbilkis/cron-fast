@@ -6,8 +6,8 @@
 [![JSR Score](https://jsr.io/badges/@kbilkis/cron-fast/score)](https://jsr.io/@kbilkis/cron-fast)
 [![CI](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml/badge.svg)](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/github/kbilkis/cron-fast/graph/badge.svg)](https://codecov.io/github/kbilkis/cron-fast)
-[![npm bundle size](https://img.shields.io/bundlejs/size/cron-fast?logo=esbuild)](https://bundlejs.com/?q=cron-fast)
-[![Snyk](https://snyk.io/test/npm/cron-fast/badge.svg)](https://snyk.io/test/npm/cron-fast)
+[![npm bundle size](https://deno.bundlejs.com/badge?q=cron-fast)](https://bundlejs.com/?q=cron-fast)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Fast and tiny JavaScript/TypeScript cron parser with timezone support.** Works everywhere: Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.
@@ -323,7 +323,7 @@ cron-fast is designed for speed and efficiency. Here's how it compares to popula
 | Validation   | **1958k ops/s** | 34k ops/s | 97k ops/s   | 462k ops/s    |
 | Parsing      | **1982k ops/s** | 35k ops/s | 98k ops/s   | 469k ops/s    |
 
-See [detailed benchmarks and feature comparison](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
+See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
 Run benchmarks yourself: `pnpm benchmark`
 

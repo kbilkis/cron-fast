@@ -403,7 +403,7 @@ function updateReadme(
 
   // Find and replace the performance table
   const tableStart = readme.indexOf("| Operation");
-  const tableEnd = readme.indexOf("\nSee [detailed benchmarks and feature comparison]");
+  const tableEnd = readme.indexOf("\nSee [detailed benchmarks]");
 
   if (tableStart === -1 || tableEnd === -1) {
     throw new Error("Could not find performance table in README.md");
