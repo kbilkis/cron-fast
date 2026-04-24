@@ -89,7 +89,7 @@
     "croner": "^10.0.1",
     "esbuild": "^0.28.0",
     "lint-staged": "^16.4.0",
-    "oxfmt": "^0.41.0",
+    "oxfmt": "^0.46.0",
     "oxlint": "^1.56.0",
     "simple-git-hooks": "^2.13.1",
     "tsdown": "^0.21.4",
