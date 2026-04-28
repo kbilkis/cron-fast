@@ -6,7 +6,7 @@
 | ------- | ------------------ |
 | 3.x.x   | :white_check_mark: |
 | 2.3.x   | :white_check_mark: |
-| < 2.3.0   | :x:              |
+| < 2.3.0 | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -22,4 +22,3 @@ Include the following:
 - Potential impact
 
 You should receive a response within 48 hours. If the issue is confirmed, a patch will be released as soon as possible depending on complexity.
-
