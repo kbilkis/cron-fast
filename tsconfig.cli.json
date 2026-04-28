@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2022", "dom"],
+    "types": ["node"]
+  },
+  "include": ["src/cli.ts", "src/index.ts", "src/types.ts"]
+}
