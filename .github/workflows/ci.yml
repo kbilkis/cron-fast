@@ -38,11 +38,11 @@ jobs:
       - name: Type check
         run: pnpm run typecheck
 
-      - name: Run tests
-        run: pnpm run test
-
       - name: Build
         run: pnpm run build
+
+      - name: Run tests
+        run: pnpm run test
 
   # Test with Deno
   test-deno:
