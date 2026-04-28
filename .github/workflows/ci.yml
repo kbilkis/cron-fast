@@ -38,11 +38,11 @@ jobs:
       - name: Type check
         run: pnpm run typecheck
 
-      - name: Run tests
-        run: pnpm run test
-
       - name: Build
         run: pnpm run build
+
+      - name: Run tests
+        run: pnpm run test
 
   # Test with Deno
   test-deno:
@@ -60,7 +60,7 @@ jobs:
         run: deno install
 
       - name: Run tests with Deno
-        run: deno run -A npm:vitest run
+        run: deno run -A npm:vitest run --exclude test/cli.test.ts
 
   # Test with Bun
   test-bun:
@@ -78,7 +78,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run tests
-        run: bun test
+        run: bun run test:noCli
 
   # Test with Cloudflare Workers runtime (workerd via @cloudflare/vitest-pool-workers)
   test-workerd:
