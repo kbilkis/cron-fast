@@ -10,7 +10,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Fast and tiny JavaScript/TypeScript cron parser with timezone support.** Works everywhere: Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.
+**10x+ faster than the alternatives. 3.5KB gzipped. Zero dependencies.**
+
+Fast and tiny JavaScript/TypeScript cron parser with timezone support. Works everywhere: Node.js, Deno, Bun, Cloudflare Workers, and browsers.
 
 ## Features
 
@@ -19,33 +21,45 @@
 - **Match dates** - Check if a date matches a cron expression
 - **Describe** - Convert cron expressions to human-readable text (e.g., "Every 5 minutes")
 - **Timezone support** - Full IANA timezone support using native `Intl` API
+- **CLI included** - Validate, preview, and describe expressions from the terminal
 
 ## Why cron-fast?
 
-- **Universal** - Works in Node.js, Deno, Bun, Cloudflare Workers, and browsers
-- **Zero dependencies** - Lightweight and secure
-- **Fast** - Optimal field increment algorithm with 10x+ performance vs alternatives
-- **Tree-shakeable** - Import only what you need
-- **Modern** - ESM + CJS, TypeScript-first
+- **10x+ faster** than other popular cron libraries on scheduling operations
+- **1/8 the bundle size** of the next most popular alternative (3.55 KB vs 28.2 KB gzipped)
+- **Zero dependencies** — nothing to audit, nothing to break
+- **Universal runtime** — same code in Node.js, Deno, Bun, Cloudflare Workers, and browsers
+- **Tree-shakeable** — `import { isValid }` adds < 1 KB to your bundle
+- **TypeScript-first** — strict types, no `@ts-ignore` required
 - **Fully tested** - Comprehensive test coverage across all runtimes
 - **ISO 8601 compatible** - Works with all standard date formats
+
+## Performance
+
+cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
+
+> Tested with cron-fast v3.1.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
+
+| Operation    | cron-fast       | croner    | cron-parser | cron-schedule |
+| ------------ | --------------- | --------- | ----------- | ------------- |
+| Next run     | **671k ops/s**  | 25k ops/s | 28k ops/s   | 287k ops/s    |
+| Previous run | **856k ops/s**  | 31k ops/s | 35k ops/s   | 332k ops/s    |
+| Validation   | **1785k ops/s** | 33k ops/s | 90k ops/s   | 452k ops/s    |
+| Parsing      | **1765k ops/s** | 32k ops/s | 90k ops/s   | 427k ops/s    |
+
+See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
+
+Run benchmarks yourself: `pnpm benchmark`
 
 ## Installation
 
 ```bash
-# Node.js (npm)
 npm install cron-fast
 
-# Node.js (pnpm)
 pnpm add cron-fast
 
-# Node.js (yarn)
-yarn add cron-fast
-
-# Deno (JSR)
 deno add jsr:@kbilkis/cron-fast
 
-# Bun
 bun add cron-fast
 
 # Any runtime (JSR)
@@ -201,7 +215,7 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.0.0):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.1.0):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
@@ -229,6 +243,20 @@ import { nextRun } from "cron-fast";
 import * as cron from "cron-fast";
 ```
 
+## CLI
+
+`npx cron-fast <expression> [options]`
+
+Available flags: `--next <n>`, `--prev <n>`, `--tz <zone>`, `--from <date>`, `--describe`, `--validate`, `--match <date>`, `--json`, `--help`.
+
+```bash
+npx cron-fast "0 9 * * 1-5" --next 5 --tz America/New_York
+npx cron-fast "*/15 * * * *" --describe
+npx cron-fast "0 0 * * *" --validate && echo "Valid!"
+npx cron-fast "0 9 * * *" --match 2026-03-16T09:00:00Z
+npx cron-fast "0 0 1 * *" --next 5 --json | jq '.runs[]'
+```
+
 ## Advanced Usage
 
 ### Working with Timezones
@@ -243,17 +271,6 @@ console.log(next.toISOString()); // "2026-03-15T13:00:00.000Z" (9 AM EDT = 1 PM 
 // Display in any timezone
 console.log(next.toLocaleString("en-US", { timeZone: "America/New_York" }));
 // "3/15/2026, 9:00:00 AM"
-```
-
-### Multiple Executions
-
-```typescript
-// Get next 10 runs
-const runs = nextRuns("0 */6 * * *", 10); // Every 6 hours
-
-// With timezone
-const runsNY = nextRuns("0 9 * * 1-5", 5, { timezone: "America/New_York" });
-// Next 5 weekday mornings in New York
 ```
 
 ### Validation and Parsing
@@ -309,23 +326,6 @@ if (isMatch("0 9 * * *", now, { timezone: "America/New_York" })) {
 - **Daylight saving time**: Use IANA timezone names (like "America/New_York") instead of abbreviations (like "EST")
 - **Day 0 and 7**: Both represent Sunday in the day-of-week field
 - **Ranges are inclusive**: `1-5` includes both 1 and 5
-
-## Performance
-
-cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
-
-> Tested with cron-fast v3.0.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
-
-| Operation    | cron-fast       | croner    | cron-parser | cron-schedule |
-| ------------ | --------------- | --------- | ----------- | ------------- |
-| Next run     | **911k ops/s**  | 31k ops/s | 34k ops/s   | 352k ops/s    |
-| Previous run | **1003k ops/s** | 32k ops/s | 39k ops/s   | 399k ops/s    |
-| Validation   | **1958k ops/s** | 34k ops/s | 97k ops/s   | 462k ops/s    |
-| Parsing      | **1982k ops/s** | 35k ops/s | 98k ops/s   | 469k ops/s    |
-
-See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
-
-Run benchmarks yourself: `pnpm benchmark`
 
 ## Contributing
 

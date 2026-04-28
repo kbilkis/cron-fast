@@ -1,26 +1,33 @@
 {
   "name": "cron-fast",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Fast and tiny JavaScript/TypeScript cron parser with timezone support - works in Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.",
   "keywords": [
     "browser",
     "bun",
+    "cli",
     "cloudflare-workers",
+    "command-line",
     "cron",
+    "crontab",
     "deno",
     "esm",
     "fast",
+    "human-readable",
     "javascript",
     "lightweight",
     "node",
     "nodejs",
     "parser",
     "performance",
+    "recurring",
     "schedule",
     "scheduler",
+    "task",
     "timezone",
     "tree-shakeable",
     "typescript",
+    "validator",
     "workerd",
     "zero-dependencies"
   ],
@@ -34,6 +41,9 @@
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/kbilkis"
+  },
+  "bin": {
+    "cron-fast": "./dist/cli.cjs"
   },
   "files": [
     "dist",
