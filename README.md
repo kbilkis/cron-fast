@@ -37,7 +37,7 @@ Fast and tiny JavaScript/TypeScript cron parser with timezone support. Works eve
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v3.1.1, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
+> Tested with cron-fast v3.1.2, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v22.18.0
 
 | Operation    | cron-fast       | croner    | cron-parser | cron-schedule |
 | ------------ | --------------- | --------- | ----------- | ------------- |
@@ -214,7 +214,7 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.1.1):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.1.2):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |

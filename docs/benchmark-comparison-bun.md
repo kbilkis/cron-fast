@@ -1,6 +1,6 @@
 # Benchmark
 
-> Tested with bun v1.3.9, cron-fast v3.1.1, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0, cron-validate v1.5.3
+> Tested with bun v1.3.9, cron-fast v3.1.2, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0, cron-validate v1.5.3
 > Tested on MacBook M1 pro
 
 ## Performance Benchmarks
