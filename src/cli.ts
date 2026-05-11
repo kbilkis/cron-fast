@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { nextRun, previousRun, nextRuns, isValid, parse, describe, isMatch } from "./index.js";
+import { previousRun, nextRuns, isValid, parse, describe, isMatch } from "./index.js";
 
 interface CliOptions {
   expression: string;
