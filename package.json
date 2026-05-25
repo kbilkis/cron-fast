@@ -91,22 +91,22 @@
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.16.3",
-    "@types/node": "^25.6.2",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@cloudflare/vitest-pool-workers": "^0.16.9",
+    "@types/node": "^25.9.1",
+    "@vitest/coverage-v8": "^4.1.7",
     "cron-parser": "^5.5.0",
     "cron-schedule": "^6.0.0",
     "cron-validate": "^1.5.3",
     "croner": "^10.0.1",
     "esbuild": "^0.28.0",
-    "lint-staged": "^17.0.4",
-    "oxfmt": "^0.50.0",
-    "oxlint": "^1.63.0",
+    "lint-staged": "^17.0.5",
+    "oxfmt": "^0.51.0",
+    "oxlint": "^1.66.0",
     "simple-git-hooks": "^2.13.1",
     "tsdown": "^0.22.0",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.3",
     "typescript": "^6.0.3",
-    "vitest": "4.1.6"
+    "vitest": "4.1.7"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged",
