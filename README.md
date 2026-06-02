@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/cron-fast.svg?logo=npm)](https://www.npmjs.com/package/cron-fast)
 [![npm provenance](https://img.shields.io/badge/provenance-attested-brightgreen?logo=npm)](https://www.npmjs.com/package/cron-fast)
-![npm](https://img.shields.io/npm/dw/cron-fast)
+[![npm](https://img.shields.io/npm/dw/cron-fast)](https://www.npmjs.com/package/cron-fast)
 [![JSR](https://jsr.io/badges/@kbilkis/cron-fast)](https://jsr.io/@kbilkis/cron-fast)
 [![JSR Score](https://jsr.io/badges/@kbilkis/cron-fast/score)](https://jsr.io/@kbilkis/cron-fast)
 [![CI](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml/badge.svg)](https://github.com/kbilkis/cron-fast/actions/workflows/ci.yml)
