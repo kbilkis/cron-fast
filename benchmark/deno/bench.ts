@@ -67,8 +67,8 @@ const parsingAdapters = {
 for (const tc of executionCases) {
   for (const [lib, fn] of Object.entries(nextRunAdapters)) {
     Deno.bench(
-      `nextRun: ${tc.name} (${lib})`,
-      { group: `nextRun: ${tc.name}`, baseline: lib === "cron-fast" },
+      `nextRun: ${tc.cron} (${lib})`,
+      { group: `nextRun: ${tc.cron}`, baseline: lib === "cron-fast" },
       () => {
         fn(tc.cron, tc.from);
       },
@@ -81,8 +81,8 @@ for (const tc of executionCases) {
 for (const tc of executionCases) {
   for (const [lib, fn] of Object.entries(previousRunAdapters)) {
     Deno.bench(
-      `previousRun: ${tc.name} (${lib})`,
-      { group: `previousRun: ${tc.name}`, baseline: lib === "cron-fast" },
+      `previousRun: ${tc.cron} (${lib})`,
+      { group: `previousRun: ${tc.cron}`, baseline: lib === "cron-fast" },
       () => {
         fn(tc.cron, tc.from);
       },

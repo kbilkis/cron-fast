@@ -14,12 +14,12 @@ const cronValidate = (cronValidateModule as any).default || cronValidateModule;
 
 for (const tc of executionCases) {
   summary(() => {
-    bench(`cron-fast: nextRun ${tc.name}`, () => nextRun(tc.cron, { from: tc.from }));
-    bench(`croner: nextRun ${tc.name}`, () =>
+    bench(`cron-fast: nextRun ${tc.cron}`, () => nextRun(tc.cron, { from: tc.from }));
+    bench(`croner: nextRun ${tc.cron}`, () =>
       new Cron(tc.cron, { startAt: tc.from, paused: true }).nextRun(tc.from));
-    bench(`cron-parser: nextRun ${tc.name}`, () =>
+    bench(`cron-parser: nextRun ${tc.cron}`, () =>
       CronExpressionParser.parse(tc.cron, { currentDate: tc.from }).next().toDate());
-    bench(`cron-schedule: nextRun ${tc.name}`, () =>
+    bench(`cron-schedule: nextRun ${tc.cron}`, () =>
       parseCronExpression(tc.cron).getNextDate(tc.from));
   });
 }
@@ -28,12 +28,12 @@ for (const tc of executionCases) {
 
 for (const tc of executionCases) {
   summary(() => {
-    bench(`cron-fast: previousRun ${tc.name}`, () => previousRun(tc.cron, { from: tc.from }));
-    bench(`croner: previousRun ${tc.name}`, () =>
+    bench(`cron-fast: previousRun ${tc.cron}`, () => previousRun(tc.cron, { from: tc.from }));
+    bench(`croner: previousRun ${tc.cron}`, () =>
       new Cron(tc.cron, { startAt: tc.from, paused: true }).previousRuns(1, tc.from));
-    bench(`cron-parser: previousRun ${tc.name}`, () =>
+    bench(`cron-parser: previousRun ${tc.cron}`, () =>
       CronExpressionParser.parse(tc.cron, { currentDate: tc.from }).prev().toDate());
-    bench(`cron-schedule: previousRun ${tc.name}`, () =>
+    bench(`cron-schedule: previousRun ${tc.cron}`, () =>
       parseCronExpression(tc.cron).getPrevDate(tc.from));
   });
 }

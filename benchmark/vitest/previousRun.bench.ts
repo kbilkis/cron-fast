@@ -3,7 +3,7 @@ import { executionCases } from "../cases.js";
 import { adapters } from "./_libs.js";
 
 for (const tc of executionCases) {
-  describe(`previousRun: ${tc.name}`, () => {
+  describe(`previousRun: ${tc.cron}`, () => {
     bench("cron-fast", () => {
       adapters.previousRun["cron-fast"](tc.cron, tc.from);
     });

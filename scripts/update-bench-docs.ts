@@ -8,9 +8,21 @@ interface NormalizedResult {
   testCase: string;
   library: string;
   opsPerSecond: number;
+  meanNs?: number;
+  p99Ns?: number;
+  rme?: number;
 }
 
 type Category = NormalizedResult["category"];
+
+const EXEC_LIBS = ["cron-fast", "cron-schedule", "cron-parser", "croner"] as const;
+const VALIDATE_LIBS = [
+  "cron-fast",
+  "cron-schedule",
+  "cron-parser",
+  "croner",
+  "cron-validate",
+] as const;
 
 // --- Parsers ---
 
@@ -47,6 +59,9 @@ function parseVitest(json: any): { results: NormalizedResult[]; runtimeVer: stri
           testCase,
           library: bench.name,
           opsPerSecond: bench.hz,
+          meanNs: bench.mean != null ? bench.mean * 1e6 : undefined,
+          p99Ns: bench.p99 != null ? bench.p99 * 1e6 : undefined,
+          rme: bench.rme,
         });
       }
     }
@@ -64,10 +79,18 @@ function parseDeno(json: any): { results: NormalizedResult[]; runtimeVer: string
 
     const libMatch = bench.name.match(/\(([^)]+)\)$/);
     const library = libMatch ? libMatch[1] : "unknown";
-    const avg = bench.results?.[0]?.ok?.avg;
+    const ok = bench.results?.[0]?.ok;
+    const avg = ok?.avg;
     if (avg == null) continue;
 
-    results.push({ category, testCase, library, opsPerSecond: 1e9 / avg });
+    results.push({
+      category,
+      testCase,
+      library,
+      opsPerSecond: 1e9 / avg,
+      meanNs: avg,
+      p99Ns: ok?.p99,
+    });
   }
   return { results, runtimeVer };
 }
@@ -86,10 +109,18 @@ function parseMitata(json: any): { results: NormalizedResult[]; runtimeVer: stri
     const category = normalizeCategory(catMatch[1]);
     const testCase = rest.substring(catMatch[0].length);
 
-    const avg = bench.runs?.[0]?.stats?.avg;
+    const stats = bench.runs?.[0]?.stats;
+    const avg = stats?.avg;
     if (avg == null || avg === 0) continue;
 
-    results.push({ category, testCase, library, opsPerSecond: 1e9 / avg });
+    results.push({
+      category,
+      testCase,
+      library,
+      opsPerSecond: 1e9 / avg,
+      meanNs: avg,
+      p99Ns: stats?.p99,
+    });
   }
   return { results, runtimeVer: "" };
 }
@@ -112,6 +143,10 @@ function calcAvg(results: NormalizedResult[], category: Category, library: strin
 
 function formatOps(n: number): string {
   return `~${Math.round(n / 1000)}k`;
+}
+
+function formatNs(ns: number): string {
+  return `${Math.round(ns).toLocaleString("en-US")} ns`;
 }
 
 function formatReadmeOps(n: number): string {
@@ -150,7 +185,7 @@ function updateReadme(
   const versionLine = `> Tested with cron-fast v${versions["cron-fast"]}, croner v${versions.croner}, cron-parser v${versions["cron-parser"]}, cron-schedule v${versions["cron-schedule"]} on Node.js v${runtimeVer}`;
   readme = readme.replace(/> Tested with cron-fast v.*\n/, versionLine + "\n");
 
-  const libs = ["cron-fast", "croner", "cron-parser", "cron-schedule"] as const;
+  const libs = VALIDATE_LIBS;
   const categories: [string, Category][] = [
     ["Next run", "nextRun"],
     ["Previous run", "previousRun"],
@@ -174,8 +209,8 @@ function updateReadme(
     throw new Error("Could not find performance table in README.md");
   }
 
-  const newTable = `| Operation    | cron-fast       | croner    | cron-parser | cron-schedule |
-| ------------ | --------------- | --------- | ----------- | ------------- |
+  const newTable = `| Operation    | cron-fast       | cron-schedule | cron-parser | croner    |
+| ------------ | --------------- | ------------- | ----------- | --------- |
 ${rows}
 `;
 
@@ -221,13 +256,39 @@ function buildDetailedTable(
         (x) => x.category === category && x.testCase === tc && x.library === lib,
       );
       if (!r) return "N/A";
-      const ops = formatOps(r.opsPerSecond);
+      let cell = formatOps(r.opsPerSecond);
+      if (r.rme != null) cell += ` ±${r.rme.toFixed(1)}%`;
       if (lib !== "cron-fast" && cronFastOps > 0) {
         const ratio = cronFastOps / r.opsPerSecond;
-        if (ratio >= 1.1) return `${ops} ✓`;
-        if (ratio <= 0.9) return `${ops} ✗`;
+        if (ratio >= 1.1) return `${cell} ✓`;
+        if (ratio <= 0.9) return `${cell} ✗`;
       }
-      return ops;
+      return cell;
+    });
+    return `| ${tc} | ${vals.join(" | ")} |`;
+  });
+
+  return [header, separator, ...rows].join("\n");
+}
+
+function buildLatencyTable(
+  results: NormalizedResult[],
+  category: Category,
+  testCases: string[],
+  libs: string[],
+): string {
+  const header = `| Test Case | ${libs.join(" | ")} |`;
+  const separator = `| --- | ${libs.map(() => "---:").join(" | ")} |`;
+
+  const rows = testCases.map((tc) => {
+    const vals = libs.map((lib) => {
+      const r = results.find(
+        (x) => x.category === category && x.testCase === tc && x.library === lib,
+      );
+      if (!r?.meanNs) return "N/A";
+      const mean = formatNs(r.meanNs);
+      const p99 = r.p99Ns != null ? formatNs(r.p99Ns) : "—";
+      return `${mean} / ${p99}`;
     });
     return `| ${tc} | ${vals.join(" | ")} |`;
   });
@@ -244,14 +305,8 @@ function updateBenchmarkDoc(
   const docPath = join(process.cwd(), `docs/benchmark-comparison-${runtime}.md`);
   let doc = readFileSync(docPath, "utf-8");
 
-  const allLibs = ["cron-fast", "croner", "cron-parser", "cron-schedule"];
-  const allLibsWithValidate = [
-    "cron-fast",
-    "cron-validate",
-    "cron-schedule",
-    "cron-parser",
-    "croner",
-  ];
+  const allLibs = [...EXEC_LIBS];
+  const allLibsWithValidate = [...VALIDATE_LIBS];
 
   const testCases = [
     ...new Set(results.filter((r) => r.category === "nextRun").map((r) => r.testCase)),
@@ -285,29 +340,45 @@ function updateBenchmarkDoc(
   const detailedSection = `
 ## Detailed Per-Test Results
 
-### Next Execution - All Libraries
+### Next Execution - Throughput (ops/sec)
 
-${buildDetailedTable(results, "nextRun", testCases, ["cron-fast", "cron-schedule", "croner", "cron-parser"])}
-
-✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
-
-### Previous Execution - All Libraries
-
-${buildDetailedTable(results, "previousRun", testCases, ["cron-fast", "cron-schedule", "croner", "cron-parser"])}
+${buildDetailedTable(results, "nextRun", testCases, [...EXEC_LIBS])}
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
 
-### Validation - All Libraries
+### Next Execution - Latency (mean / p99)
 
-${buildDetailedTable(results, "validation", validationTestCases, ["cron-fast", "cron-schedule", "cron-parser", "croner", "cron-validate"])}
+${buildLatencyTable(results, "nextRun", testCases, [...EXEC_LIBS])}
+
+### Previous Execution - Throughput (ops/sec)
+
+${buildDetailedTable(results, "previousRun", testCases, [...EXEC_LIBS])}
+
+✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Previous Execution - Latency (mean / p99)
+
+${buildLatencyTable(results, "previousRun", testCases, [...EXEC_LIBS])}
+
+### Validation - Throughput (ops/sec)
+
+${buildDetailedTable(results, "validation", validationTestCases, [...VALIDATE_LIBS])}
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
 
-### Parsing - All Libraries
+### Validation - Latency (mean / p99)
 
-${buildDetailedTable(results, "parsing", validationTestCases, ["cron-fast", "cron-schedule", "cron-parser", "croner", "cron-validate"])}
+${buildLatencyTable(results, "validation", validationTestCases, [...VALIDATE_LIBS])}
+
+### Parsing - Throughput (ops/sec)
+
+${buildDetailedTable(results, "parsing", validationTestCases, [...VALIDATE_LIBS])}
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Parsing - Latency (mean / p99)
+
+${buildLatencyTable(results, "parsing", validationTestCases, [...VALIDATE_LIBS])}
 `;
 
   if (doc.includes("## Detailed Per-Test Results")) {

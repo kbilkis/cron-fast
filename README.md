@@ -40,12 +40,12 @@ cron-fast is designed for speed and efficiency. Here's how it compares to popula
 
 > Tested with cron-fast v3.1.2, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v24.16.0
 
-| Operation    | cron-fast       | croner    | cron-parser | cron-schedule |
-| ------------ | --------------- | --------- | ----------- | ------------- |
-| Next run     | **793k ops/s**  | 31k ops/s | 35k ops/s   | 334k ops/s    |
-| Previous run | **904k ops/s**  | 32k ops/s | 39k ops/s   | 351k ops/s    |
-| Validation   | **1794k ops/s** | 34k ops/s | 96k ops/s   | 459k ops/s    |
-| Parsing      | **1900k ops/s** | 33k ops/s | 101k ops/s  | 462k ops/s    |
+| Operation    | cron-fast       | cron-schedule | cron-parser | croner    |
+| ------------ | --------------- | ------------- | ----------- | --------- | ---------- |
+| Next run     | **789k ops/s**  | 335k ops/s    | 35k ops/s   | 31k ops/s | 0k ops/s   |
+| Previous run | **898k ops/s**  | 353k ops/s    | 39k ops/s   | 32k ops/s | 0k ops/s   |
+| Validation   | **1743k ops/s** | 445k ops/s    | 95k ops/s   | 34k ops/s | 623k ops/s |
+| Parsing      | **1757k ops/s** | 448k ops/s    | 95k ops/s   | 34k ops/s | 615k ops/s |
 
 See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 

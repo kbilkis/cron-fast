@@ -11,96 +11,144 @@ Powered by vitest bench (tinybench).
 
 | Library       | Avg ops/sec | vs cron-fast |
 | ------------- | ----------- | ------------ |
-| **cron-fast** | ~793k       | baseline     |
-| croner        | ~31k        | 25.7x faster |
-| cron-parser   | ~35k        | 22.8x faster |
-| cron-schedule | ~334k       | 2.4x faster  |
+| **cron-fast** | ~789k       | baseline     |
+| cron-schedule | ~335k       | 2.4x faster  |
+| cron-parser   | ~35k        | 22.4x faster |
+| croner        | ~31k        | 25.1x faster |
 
 ### Previous Execution Time
 
 | Library       | Avg ops/sec | vs cron-fast |
 | ------------- | ----------- | ------------ |
-| **cron-fast** | ~904k       | baseline     |
-| croner        | ~32k        | 28.4x faster |
-| cron-parser   | ~39k        | 23.4x faster |
-| cron-schedule | ~351k       | 2.6x faster  |
+| **cron-fast** | ~898k       | baseline     |
+| cron-schedule | ~353k       | 2.5x faster  |
+| cron-parser   | ~39k        | 22.9x faster |
+| croner        | ~32k        | 28.0x faster |
 
 ### Validation
 
 | Library       | Avg ops/sec | vs cron-fast |
 | ------------- | ----------- | ------------ |
-| **cron-fast** | ~1794k      | baseline     |
-| cron-validate | ~644k       | 2.8x faster  |
-| cron-schedule | ~459k       | 3.9x faster  |
-| cron-parser   | ~96k        | 18.6x faster |
-| croner        | ~34k        | 52.0x faster |
+| **cron-fast** | ~1743k      | baseline     |
+| cron-schedule | ~445k       | 3.9x faster  |
+| cron-parser   | ~95k        | 18.4x faster |
+| croner        | ~34k        | 51.7x faster |
+| cron-validate | ~623k       | 2.8x faster  |
 
 ### Parsing
 
 | Library       | Avg ops/sec | vs cron-fast |
 | ------------- | ----------- | ------------ |
-| **cron-fast** | ~1900k      | baseline     |
-| cron-validate | ~665k       | 2.9x faster  |
-| cron-schedule | ~462k       | 4.1x faster  |
-| cron-parser   | ~101k       | 18.9x faster |
-| croner        | ~33k        | 57.3x faster |
+| **cron-fast** | ~1757k      | baseline     |
+| cron-schedule | ~448k       | 3.9x faster  |
+| cron-parser   | ~95k        | 18.6x faster |
+| croner        | ~34k        | 52.2x faster |
+| cron-validate | ~615k       | 2.9x faster  |
 
 Run benchmarks yourself: `pnpm bench`
 
 ## Detailed Per-Test Results
 
-### Next Execution - All Libraries
+### Next Execution - Throughput (ops/sec)
 
-| Test Case                   | cron-fast | cron-schedule | croner | cron-parser |
-| --------------------------- | --------: | ------------: | -----: | ----------: |
-| Every minute                |    ~1362k |       ~138k ✓ | ~32k ✓ |      ~32k ✓ |
-| Sparse: First of month      |     ~692k |       ~450k ✓ | ~32k ✓ |      ~19k ✓ |
-| Sparse: 31st (skips months) |     ~646k |       ~447k ✓ | ~30k ✓ |       ~8k ✓ |
-| Step: Every 15 minutes      |     ~837k |       ~254k ✓ | ~32k ✓ |      ~56k ✓ |
-| Specific: 9 AM daily        |     ~880k |       ~329k ✓ | ~30k ✓ |      ~44k ✓ |
-| OR-mode: 15th OR Monday     |     ~411k |         ~431k | ~31k ✓ |      ~39k ✓ |
-| Weekdays: Mon-Fri 9 AM      |     ~724k |       ~288k ✓ | ~30k ✓ |      ~45k ✓ |
-
-✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
-
-### Previous Execution - All Libraries
-
-| Test Case                   | cron-fast | cron-schedule | croner | cron-parser |
-| --------------------------- | --------: | ------------: | -----: | ----------: |
-| Every minute                |    ~1373k |       ~133k ✓ | ~33k ✓ |      ~35k ✓ |
-| Sparse: First of month      |     ~913k |       ~494k ✓ | ~31k ✓ |       ~9k ✓ |
-| Sparse: 31st (skips months) |     ~646k |       ~416k ✓ | ~31k ✓ |       ~9k ✓ |
-| Step: Every 15 minutes      |     ~837k |       ~251k ✓ | ~32k ✓ |      ~55k ✓ |
-| Specific: 9 AM daily        |     ~928k |       ~341k ✓ | ~32k ✓ |      ~48k ✓ |
-| OR-mode: 15th OR Monday     |     ~872k |       ~505k ✓ | ~32k ✓ |      ~65k ✓ |
-| Weekdays: Mon-Fri 9 AM      |     ~758k |       ~318k ✓ | ~30k ✓ |      ~50k ✓ |
+| Test Case       |    cron-fast | cron-schedule |  cron-parser |       croner |
+| --------------- | -----------: | ------------: | -----------: | -----------: |
+| \* \* \* \* \*  | ~1366k ±1.3% | ~140k ±0.4% ✓ | ~33k ±0.4% ✓ | ~32k ±0.7% ✓ |
+| 0 0 1 \* \*     |  ~698k ±0.3% | ~452k ±0.4% ✓ | ~20k ±0.4% ✓ | ~32k ±0.3% ✓ |
+| 0 12 31 \* \*   |  ~640k ±0.3% | ~448k ±0.4% ✓ |  ~8k ±0.5% ✓ | ~31k ±0.3% ✓ |
+| _/15 _ \* \* \* |  ~822k ±0.4% | ~255k ±0.4% ✓ | ~57k ±0.4% ✓ | ~33k ±0.4% ✓ |
+| 0 9 \* \* \*    |  ~875k ±1.3% | ~327k ±0.4% ✓ | ~44k ±0.4% ✓ | ~32k ±1.7% ✓ |
+| 0 9 15 \* 1     |  ~407k ±0.3% |   ~436k ±0.4% | ~40k ±0.4% ✓ | ~31k ±0.4% ✓ |
+| 0 9 \* \* 1-5   |  ~714k ±0.4% | ~289k ±0.4% ✓ | ~45k ±0.4% ✓ | ~30k ±0.3% ✓ |
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
 
-### Validation - All Libraries
+### Next Execution - Latency (mean / p99)
 
-| Test Case       | cron-fast | cron-schedule | cron-parser | croner | cron-validate |
-| --------------- | --------: | ------------: | ----------: | -----: | ------------: |
-| \* \* \* \* \*  |    ~2008k |       ~155k ✓ |      ~45k ✓ | ~35k ✓ |       ~630k ✓ |
-| 0 0 1 \* \*     |    ~2011k |       ~619k ✓ |     ~126k ✓ | ~34k ✓ |       ~633k ✓ |
-| 0 12 31 \* \*   |    ~1763k |       ~608k ✓ |     ~117k ✓ | ~34k ✓ |       ~657k ✓ |
-| _/15 _ \* \* \* |    ~1617k |       ~288k ✓ |      ~68k ✓ | ~34k ✓ |       ~702k ✓ |
-| 0 9 \* \* \*    |    ~2119k |       ~401k ✓ |      ~88k ✓ | ~35k ✓ |       ~669k ✓ |
-| 0 9 15 \* 1     |    ~1693k |       ~742k ✓ |     ~139k ✓ | ~34k ✓ |       ~597k ✓ |
-| 0 9 \* \* 1-5   |    ~1350k |       ~402k ✓ |      ~91k ✓ | ~34k ✓ |       ~623k ✓ |
+| Test Case       |           cron-fast |       cron-schedule |             cron-parser |                croner |
+| --------------- | ------------------: | ------------------: | ----------------------: | --------------------: |
+| \* \* \* \* \*  |   732 ns / 1,167 ns | 7,145 ns / 8,167 ns |   30,745 ns / 42,833 ns | 31,286 ns / 44,166 ns |
+| 0 0 1 \* \*     | 1,432 ns / 1,833 ns | 2,214 ns / 2,792 ns |   50,922 ns / 60,041 ns | 31,011 ns / 41,958 ns |
+| 0 12 31 \* \*   | 1,563 ns / 1,958 ns | 2,230 ns / 2,792 ns | 129,162 ns / 160,542 ns | 32,431 ns / 39,250 ns |
+| _/15 _ \* \* \* | 1,216 ns / 1,708 ns | 3,918 ns / 4,667 ns |   17,435 ns / 22,375 ns | 30,486 ns / 38,125 ns |
+| 0 9 \* \* \*    | 1,143 ns / 1,417 ns | 3,055 ns / 3,667 ns |   22,705 ns / 29,125 ns | 31,390 ns / 44,958 ns |
+| 0 9 15 \* 1     | 2,454 ns / 2,958 ns | 2,296 ns / 2,875 ns |   25,230 ns / 32,375 ns | 32,571 ns / 40,709 ns |
+| 0 9 \* \* 1-5   | 1,401 ns / 1,875 ns | 3,460 ns / 4,042 ns |   22,065 ns / 29,916 ns | 33,261 ns / 40,875 ns |
+
+### Previous Execution - Throughput (ops/sec)
+
+| Test Case       |    cron-fast | cron-schedule |  cron-parser |       croner |
+| --------------- | -----------: | ------------: | -----------: | -----------: |
+| \* \* \* \* \*  | ~1347k ±1.2% | ~133k ±0.4% ✓ | ~35k ±0.4% ✓ | ~33k ±0.7% ✓ |
+| 0 0 1 \* \*     |  ~912k ±0.3% | ~483k ±0.5% ✓ |  ~9k ±0.4% ✓ | ~32k ±0.3% ✓ |
+| 0 12 31 \* \*   |  ~650k ±0.3% | ~426k ±0.2% ✓ |  ~9k ±0.4% ✓ | ~31k ±0.4% ✓ |
+| _/15 _ \* \* \* |  ~818k ±0.4% | ~254k ±0.4% ✓ | ~57k ±0.3% ✓ | ~33k ±1.1% ✓ |
+| 0 9 \* \* \*    |  ~929k ±0.8% | ~340k ±0.5% ✓ | ~49k ±0.4% ✓ | ~32k ±1.3% ✓ |
+| 0 9 15 \* 1     |  ~868k ±0.4% | ~514k ±0.3% ✓ | ~65k ±0.4% ✓ | ~32k ±0.9% ✓ |
+| 0 9 \* \* 1-5   |  ~763k ±0.3% | ~321k ±0.3% ✓ | ~51k ±0.4% ✓ | ~31k ±0.3% ✓ |
+
+✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Previous Execution - Latency (mean / p99)
+
+| Test Case       |           cron-fast |        cron-schedule |             cron-parser |                croner |
+| --------------- | ------------------: | -------------------: | ----------------------: | --------------------: |
+| \* \* \* \* \*  |   743 ns / 1,292 ns | 7,514 ns / 10,125 ns |   28,777 ns / 40,208 ns | 30,433 ns / 44,000 ns |
+| 0 0 1 \* \*     | 1,096 ns / 1,417 ns |  2,069 ns / 2,709 ns | 108,724 ns / 156,084 ns | 31,691 ns / 38,709 ns |
+| 0 12 31 \* \*   | 1,538 ns / 1,917 ns |  2,347 ns / 2,917 ns | 114,818 ns / 133,250 ns | 31,874 ns / 38,750 ns |
+| _/15 _ \* \* \* | 1,223 ns / 1,708 ns |  3,930 ns / 4,625 ns |   17,589 ns / 23,125 ns | 30,158 ns / 38,583 ns |
+| 0 9 \* \* \*    | 1,076 ns / 1,458 ns |  2,941 ns / 3,583 ns |   20,486 ns / 26,625 ns | 31,076 ns / 47,125 ns |
+| 0 9 15 \* 1     | 1,152 ns / 1,542 ns |  1,946 ns / 2,459 ns |   15,365 ns / 19,791 ns | 30,993 ns / 38,375 ns |
+| 0 9 \* \* 1-5   | 1,310 ns / 1,791 ns |  3,113 ns / 3,708 ns |   19,729 ns / 26,583 ns | 32,442 ns / 40,042 ns |
+
+### Validation - Throughput (ops/sec)
+
+| Test Case       |    cron-fast | cron-schedule |   cron-parser |       croner | cron-validate |
+| --------------- | -----------: | ------------: | ------------: | -----------: | ------------: |
+| \* \* \* \* \*  | ~1945k ±1.5% | ~149k ±0.4% ✓ |  ~44k ±0.4% ✓ | ~35k ±0.6% ✓ | ~591k ±1.5% ✓ |
+| 0 0 1 \* \*     | ~1971k ±0.5% | ~605k ±0.5% ✓ | ~122k ±0.4% ✓ | ~33k ±0.4% ✓ | ~612k ±2.8% ✓ |
+| 0 12 31 \* \*   | ~1678k ±0.4% | ~597k ±0.5% ✓ | ~122k ±0.4% ✓ | ~34k ±0.4% ✓ | ~657k ±0.4% ✓ |
+| _/15 _ \* \* \* | ~1557k ±0.6% | ~267k ±2.6% ✓ |  ~66k ±0.4% ✓ | ~34k ±0.4% ✓ | ~640k ±3.4% ✓ |
+| 0 9 \* \* \*    | ~2061k ±0.2% | ~387k ±0.5% ✓ |  ~86k ±0.4% ✓ | ~33k ±0.4% ✓ | ~611k ±0.9% ✓ |
+| 0 9 15 \* 1     | ~1663k ±0.5% | ~716k ±0.4% ✓ | ~135k ±0.4% ✓ | ~34k ±0.4% ✓ | ~609k ±2.8% ✓ |
+| 0 9 \* \* 1-5   | ~1328k ±0.5% | ~394k ±0.5% ✓ |  ~90k ±0.3% ✓ | ~34k ±0.4% ✓ | ~639k ±0.4% ✓ |
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
 
-### Parsing - All Libraries
+### Validation - Latency (mean / p99)
 
-| Test Case       | cron-fast | cron-schedule | cron-parser | croner | cron-validate |
-| --------------- | --------: | ------------: | ----------: | -----: | ------------: |
-| \* \* \* \* \*  |    ~2120k |       ~157k ✓ |      ~47k ✓ | ~35k ✓ |       ~652k ✓ |
-| 0 0 1 \* \*     |    ~2162k |       ~621k ✓ |     ~131k ✓ | ~34k ✓ |       ~655k ✓ |
-| 0 12 31 \* \*   |    ~1860k |       ~611k ✓ |     ~125k ✓ | ~34k ✓ |       ~680k ✓ |
-| _/15 _ \* \* \* |    ~1667k |       ~290k ✓ |      ~71k ✓ | ~27k ✓ |       ~716k ✓ |
-| 0 9 \* \* \*    |    ~2251k |       ~399k ✓ |      ~91k ✓ | ~34k ✓ |       ~647k ✓ |
-| 0 9 15 \* 1     |    ~1833k |       ~758k ✓ |     ~144k ✓ | ~35k ✓ |       ~659k ✓ |
-| 0 9 \* \* 1-5   |    ~1410k |       ~399k ✓ |      ~95k ✓ | ~33k ✓ |       ~648k ✓ |
+| Test Case       |         cron-fast |       cron-schedule |           cron-parser |                croner |       cron-validate |
+| --------------- | ----------------: | ------------------: | --------------------: | --------------------: | ------------------: |
+| \* \* \* \* \*  | 514 ns / 1,125 ns | 6,695 ns / 9,792 ns | 22,964 ns / 36,875 ns | 28,980 ns / 43,833 ns | 1,691 ns / 2,458 ns |
+| 0 0 1 \* \*     |   507 ns / 875 ns | 1,653 ns / 2,209 ns |  8,166 ns / 11,916 ns | 29,887 ns / 44,416 ns | 1,634 ns / 2,500 ns |
+| 0 12 31 \* \*   |   596 ns / 750 ns | 1,676 ns / 2,292 ns |  8,192 ns / 11,333 ns | 29,624 ns / 39,500 ns | 1,523 ns / 1,958 ns |
+| _/15 _ \* \* \* | 642 ns / 1,084 ns | 3,743 ns / 8,958 ns | 15,241 ns / 25,166 ns | 29,801 ns / 45,250 ns | 1,563 ns / 2,417 ns |
+| 0 9 \* \* \*    |   485 ns / 709 ns | 2,582 ns / 3,292 ns | 11,624 ns / 15,833 ns | 29,871 ns / 44,875 ns | 1,638 ns / 2,208 ns |
+| 0 9 15 \* 1     |   601 ns / 958 ns | 1,397 ns / 1,958 ns |  7,432 ns / 10,958 ns | 29,832 ns / 40,667 ns | 1,643 ns / 2,583 ns |
+| 0 9 \* \* 1-5   | 753 ns / 1,250 ns | 2,539 ns / 3,166 ns | 11,162 ns / 14,542 ns | 29,767 ns / 38,083 ns | 1,565 ns / 2,000 ns |
+
+### Parsing - Throughput (ops/sec)
+
+| Test Case       |    cron-fast | cron-schedule |   cron-parser |       croner | cron-validate |
+| --------------- | -----------: | ------------: | ------------: | -----------: | ------------: |
+| \* \* \* \* \*  | ~1962k ±1.4% | ~151k ±0.4% ✓ |  ~44k ±0.4% ✓ | ~34k ±0.4% ✓ | ~582k ±2.6% ✓ |
+| 0 0 1 \* \*     | ~1995k ±0.5% | ~610k ±0.5% ✓ | ~120k ±2.9% ✓ | ~34k ±0.4% ✓ | ~604k ±4.5% ✓ |
+| 0 12 31 \* \*   | ~1718k ±0.2% | ~584k ±0.9% ✓ | ~120k ±0.4% ✓ | ~33k ±0.5% ✓ | ~608k ±2.7% ✓ |
+| _/15 _ \* \* \* | ~1523k ±0.6% | ~280k ±0.5% ✓ |  ~67k ±0.4% ✓ | ~34k ±0.4% ✓ | ~681k ±0.3% ✓ |
+| 0 9 \* \* \*    | ~2096k ±0.2% | ~393k ±0.4% ✓ |  ~86k ±0.4% ✓ | ~34k ±0.4% ✓ | ~620k ±1.5% ✓ |
+| 0 9 15 \* 1     | ~1682k ±0.5% | ~729k ±0.4% ✓ | ~138k ±0.4% ✓ | ~33k ±0.4% ✓ | ~596k ±2.6% ✓ |
+| 0 9 \* \* 1-5   | ~1325k ±0.5% | ~390k ±0.5% ✓ |  ~88k ±0.4% ✓ | ~33k ±0.4% ✓ | ~618k ±0.3% ✓ |
 
 ✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Parsing - Latency (mean / p99)
+
+| Test Case       |         cron-fast |       cron-schedule |           cron-parser |                croner |       cron-validate |
+| --------------- | ----------------: | ------------------: | --------------------: | --------------------: | ------------------: |
+| \* \* \* \* \*  | 510 ns / 1,125 ns | 6,610 ns / 9,583 ns | 22,953 ns / 38,833 ns | 29,101 ns / 47,583 ns | 1,719 ns / 2,250 ns |
+| 0 0 1 \* \*     |   501 ns / 875 ns | 1,640 ns / 2,208 ns |  8,302 ns / 14,000 ns | 29,391 ns / 46,208 ns | 1,656 ns / 2,292 ns |
+| 0 12 31 \* \*   |   582 ns / 750 ns | 1,713 ns / 2,500 ns |  8,307 ns / 16,833 ns | 30,148 ns / 56,250 ns | 1,644 ns / 2,625 ns |
+| _/15 _ \* \* \* | 656 ns / 1,167 ns | 3,568 ns / 6,208 ns | 14,965 ns / 20,000 ns | 29,677 ns / 42,292 ns | 1,468 ns / 2,000 ns |
+| 0 9 \* \* \*    |   477 ns / 750 ns | 2,546 ns / 3,333 ns | 11,644 ns / 16,542 ns | 29,323 ns / 43,417 ns | 1,614 ns / 2,084 ns |
+| 0 9 15 \* 1     |   595 ns / 958 ns | 1,372 ns / 1,875 ns |  7,263 ns / 10,500 ns | 30,020 ns / 44,167 ns | 1,679 ns / 2,958 ns |
+| 0 9 \* \* 1-5   | 755 ns / 1,291 ns | 2,561 ns / 3,333 ns | 11,355 ns / 16,708 ns | 30,141 ns / 43,833 ns | 1,618 ns / 2,083 ns |
