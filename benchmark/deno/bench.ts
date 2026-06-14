@@ -1,10 +1,10 @@
-import { nextRun, previousRun, isValid, parse } from "../../src/index.js";
+import { nextRun, previousRun, nextRuns, isValid, parse } from "../../src/index.js";
 import { Cron } from "npm:croner";
 import { CronExpressionParser } from "npm:cron-parser";
 import { parseCronExpression } from "npm:cron-schedule";
 import cronValidateModule from "npm:cron-validate";
 
-import { executionCases, validationCases } from "../cases.ts";
+import { executionCases, validationCases, nextRunsCases } from "../cases.ts";
 
 const cronValidate = (cronValidateModule as any).default || cronValidateModule;
 
@@ -17,6 +17,15 @@ const nextRunAdapters = {
   "cron-parser": (cron: string, from: Date) =>
     CronExpressionParser.parse(cron, { currentDate: from }).next().toDate(),
   "cron-schedule": (cron: string, from: Date) => parseCronExpression(cron).getNextDate(from),
+};
+
+const nextRunsAdapters = {
+  "cron-fast": (cron: string, from: Date) => nextRuns(cron, 100, { from }),
+  croner: (cron: string, from: Date) =>
+    new Cron(cron, { startAt: from, paused: true }).nextRuns(100, from),
+  "cron-parser": (cron: string, from: Date) =>
+    CronExpressionParser.parse(cron, { currentDate: from }).take(100),
+  "cron-schedule": (cron: string, from: Date) => parseCronExpression(cron).getNextDates(100, from),
 };
 
 const previousRunAdapters = {
@@ -69,6 +78,20 @@ for (const tc of executionCases) {
     Deno.bench(
       `nextRun: ${tc.cron} (${lib})`,
       { group: `nextRun: ${tc.cron}`, baseline: lib === "cron-fast" },
+      () => {
+        fn(tc.cron, tc.from);
+      },
+    );
+  }
+}
+
+// --- Benchmarks: nextRuns ---
+
+for (const tc of nextRunsCases) {
+  for (const [lib, fn] of Object.entries(nextRunsAdapters)) {
+    Deno.bench(
+      `nextRuns: ${tc.cron} (${lib})`,
+      { group: `nextRuns: ${tc.cron}`, baseline: lib === "cron-fast" },
       () => {
         fn(tc.cron, tc.from);
       },

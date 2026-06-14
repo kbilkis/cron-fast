@@ -1,12 +1,12 @@
 import { run, bench, summary } from "mitata";
 
-import { nextRun, previousRun, isValid, parse } from "../../src/index.js";
+import { nextRun, previousRun, nextRuns, isValid, parse } from "../../src/index.js";
 import { Cron } from "croner";
 import { CronExpressionParser } from "cron-parser";
 import { parseCronExpression } from "cron-schedule";
 import cronValidateModule from "cron-validate";
 
-import { executionCases, validationCases } from "../cases.ts";
+import { executionCases, validationCases, nextRunsCases } from "../cases.ts";
 
 const cronValidate = (cronValidateModule as any).default || cronValidateModule;
 
@@ -21,6 +21,20 @@ for (const tc of executionCases) {
       CronExpressionParser.parse(tc.cron, { currentDate: tc.from }).next().toDate());
     bench(`cron-schedule: nextRun ${tc.cron}`, () =>
       parseCronExpression(tc.cron).getNextDate(tc.from));
+  });
+}
+
+// --- nextRuns ---
+
+for (const tc of nextRunsCases) {
+  summary(() => {
+    bench(`cron-fast: nextRuns ${tc.cron}`, () => nextRuns(tc.cron, 100, { from: tc.from }));
+    bench(`croner: nextRuns ${tc.cron}`, () =>
+      new Cron(tc.cron, { startAt: tc.from, paused: true }).nextRuns(100, tc.from));
+    bench(`cron-parser: nextRuns ${tc.cron}`, () =>
+      CronExpressionParser.parse(tc.cron, { currentDate: tc.from }).take(100));
+    bench(`cron-schedule: nextRuns ${tc.cron}`, () =>
+      parseCronExpression(tc.cron).getNextDates(100, tc.from));
   });
 }
 

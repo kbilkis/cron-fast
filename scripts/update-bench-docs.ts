@@ -4,7 +4,7 @@ import { join } from "node:path";
 // --- Types ---
 
 interface NormalizedResult {
-  category: "nextRun" | "previousRun" | "validation" | "parsing";
+  category: "nextRun" | "nextRuns" | "previousRun" | "validation" | "parsing";
   testCase: string;
   library: string;
   opsPerSecond: number;
@@ -30,6 +30,8 @@ function normalizeCategory(cat: string): Category {
   switch (cat) {
     case "nextRun":
       return "nextRun";
+    case "nextRuns":
+      return "nextRuns";
     case "previousRun":
       return "previousRun";
     case "validation":
@@ -104,7 +106,7 @@ function parseMitata(json: any): { results: NormalizedResult[]; runtimeVer: stri
     const library = alias.substring(0, colonIdx);
     const rest = alias.substring(colonIdx + 2);
 
-    const catMatch = rest.match(/^(nextRun|previousRun|validate|parse)\s+/);
+    const catMatch = rest.match(/^(nextRuns|nextRun|previousRun|validate|parse)\s+/);
     if (!catMatch) continue;
     const category = normalizeCategory(catMatch[1]);
     const testCase = rest.substring(catMatch[0].length);
@@ -185,9 +187,10 @@ function updateReadme(
   const versionLine = `> Tested with cron-fast v${versions["cron-fast"]}, croner v${versions.croner}, cron-parser v${versions["cron-parser"]}, cron-schedule v${versions["cron-schedule"]} on Node.js v${runtimeVer}`;
   readme = readme.replace(/> Tested with cron-fast v.*\n/, versionLine + "\n");
 
-  const libs = VALIDATE_LIBS;
+  const libs = EXEC_LIBS;
   const categories: [string, Category][] = [
     ["Next run", "nextRun"],
+    ["Next 100 runs", "nextRuns"],
     ["Previous run", "previousRun"],
     ["Validation", "validation"],
     ["Parsing", "parsing"],
@@ -311,6 +314,9 @@ function updateBenchmarkDoc(
   const testCases = [
     ...new Set(results.filter((r) => r.category === "nextRun").map((r) => r.testCase)),
   ];
+  const nextRunsTestCases = [
+    ...new Set(results.filter((r) => r.category === "nextRuns").map((r) => r.testCase)),
+  ];
   const validationTestCases = [
     ...new Set(results.filter((r) => r.category === "validation").map((r) => r.testCase)),
   ];
@@ -322,6 +328,7 @@ function updateBenchmarkDoc(
   // Update summary tables
   const tableConfigs: [string, Category, string[]][] = [
     ["Next Execution Time", "nextRun", allLibs],
+    ["Next 100 Runs Time", "nextRuns", allLibs],
     ["Previous Execution Time", "previousRun", allLibs],
     ["Validation", "validation", allLibsWithValidate],
     ["Parsing", "parsing", allLibsWithValidate],
@@ -349,6 +356,16 @@ ${buildDetailedTable(results, "nextRun", testCases, [...EXEC_LIBS])}
 ### Next Execution - Latency (mean / p99)
 
 ${buildLatencyTable(results, "nextRun", testCases, [...EXEC_LIBS])}
+
+### Next 100 Runs - Throughput (ops/sec)
+
+${buildDetailedTable(results, "nextRuns", nextRunsTestCases, [...EXEC_LIBS])}
+
+✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Next 100 Runs - Latency (mean / p99)
+
+${buildLatencyTable(results, "nextRuns", nextRunsTestCases, [...EXEC_LIBS])}
 
 ### Previous Execution - Throughput (ops/sec)
 

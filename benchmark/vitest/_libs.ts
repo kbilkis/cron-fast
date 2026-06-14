@@ -1,4 +1,4 @@
-import { nextRun, previousRun, isValid, parse } from "../../src/index.js";
+import { nextRun, previousRun, nextRuns, isValid, parse } from "../../src/index.js";
 import { Cron } from "croner";
 import { CronExpressionParser } from "cron-parser";
 import { parseCronExpression } from "cron-schedule";
@@ -22,6 +22,15 @@ export const adapters = {
     "cron-parser": (cron: string, from: Date) =>
       CronExpressionParser.parse(cron, { currentDate: from }).prev().toDate(),
     "cron-schedule": (cron: string, from: Date) => parseCronExpression(cron).getPrevDate(from),
+  },
+  nextRuns: {
+    "cron-fast": (cron: string, from: Date) => nextRuns(cron, 100, { from }),
+    croner: (cron: string, from: Date) =>
+      new Cron(cron, { startAt: from, paused: true }).nextRuns(100, from),
+    "cron-parser": (cron: string, from: Date) =>
+      CronExpressionParser.parse(cron, { currentDate: from }).take(100),
+    "cron-schedule": (cron: string, from: Date) =>
+      parseCronExpression(cron).getNextDates(100, from),
   },
   validation: {
     "cron-fast": (cron: string) => isValid(cron),
