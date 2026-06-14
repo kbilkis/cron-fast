@@ -14,11 +14,11 @@ Choose your runtime to see detailed performance comparisons:
 
 ```bash
 # Node.js
-pnpm benchmark
+pnpm bench
 
 # Deno
-pnpm benchmark:deno
+pnpm bench:deno
 
 # Bun
-pnpm benchmark:bun
+pnpm bench:bun
 ```

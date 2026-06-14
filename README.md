@@ -38,14 +38,14 @@ Fast and tiny JavaScript/TypeScript cron parser with timezone support. Works eve
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v3.1.2, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v24.15.0
+> Tested with cron-fast v3.1.2, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v24.16.0
 
 | Operation    | cron-fast       | croner    | cron-parser | cron-schedule |
 | ------------ | --------------- | --------- | ----------- | ------------- |
-| Next run     | **849k ops/s**  | 32k ops/s | 35k ops/s   | 341k ops/s    |
-| Previous run | **949k ops/s**  | 33k ops/s | 40k ops/s   | 361k ops/s    |
-| Validation   | **1858k ops/s** | 34k ops/s | 96k ops/s   | 467k ops/s    |
-| Parsing      | **1867k ops/s** | 34k ops/s | 96k ops/s   | 466k ops/s    |
+| Next run     | **793k ops/s**  | 31k ops/s | 35k ops/s   | 334k ops/s    |
+| Previous run | **904k ops/s**  | 32k ops/s | 39k ops/s   | 351k ops/s    |
+| Validation   | **1794k ops/s** | 34k ops/s | 96k ops/s   | 459k ops/s    |
+| Parsing      | **1900k ops/s** | 33k ops/s | 101k ops/s  | 462k ops/s    |
 
 See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
