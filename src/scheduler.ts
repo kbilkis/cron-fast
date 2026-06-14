@@ -63,11 +63,17 @@ export function previousRun(expression: string, options?: CronOptions): Date {
 export function nextRuns(expression: string, count: number, options?: CronOptions): Date[] {
   if (count <= 0) return [];
 
+  const parsed = parse(expression);
+  const tz = options?.timezone;
+
   const results: Date[] = [];
   let current = options?.from || new Date();
 
   for (let i = 0; i < count; i++) {
-    const next = nextRun(expression, { ...options, from: current });
+    const start = tz !== undefined ? convertToTimezone(current, tz) : new Date(current);
+    start.setUTCSeconds(0, 0);
+    start.setUTCMinutes(start.getUTCMinutes() + 1);
+    const next = findMatch(parsed, start, "next", tz, expression);
     results.push(next);
     current = new Date(next.getTime() + ONE_MINUTE_MS);
   }
