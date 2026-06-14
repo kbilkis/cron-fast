@@ -92,20 +92,20 @@
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.16.10",
-    "@types/node": "^25.9.1",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@cloudflare/vitest-pool-workers": "^0.16.15",
+    "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.8",
     "cron-parser": "^5.5.0",
     "cron-schedule": "^6.0.0",
     "cron-validate": "^1.5.3",
     "croner": "^10.0.1",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "lint-staged": "^17.0.7",
     "mitata": "^1.0.34",
     "oxfmt": "^0.51.0",
-    "oxlint": "^1.67.0",
+    "oxlint": "^1.69.0",
     "simple-git-hooks": "^2.13.1",
-    "tsdown": "^0.22.1",
+    "tsdown": "^0.22.2",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "4.1.7"
@@ -120,5 +120,5 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@11.0.9"
+  "packageManager": "pnpm@11.6.0"
 }
