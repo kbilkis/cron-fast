@@ -32,6 +32,9 @@
     "zero-dependencies"
   ],
   "homepage": "https://github.com/kbilkis/cron-fast#readme",
+  "bugs": {
+    "url": "https://github.com/kbilkis/cron-fast/issues"
+  },
   "license": "MIT",
   "author": "Kasparas Bilkis kasparas@bilkis.lt",
   "repository": {
@@ -83,7 +86,7 @@
     "bench": "vitest bench",
     "bench:deno": "deno bench --allow-read --allow-env --allow-net --sloppy-imports benchmark/deno/bench.ts",
     "bench:bun": "bun run benchmark/bun/bench.ts",
-    "update-bench": "vitest bench --run --outputJson=benchmark/results/node.json && tsx scripts/update-bench-docs.ts node benchmark/results/node.json && oxfmt README.md docs/benchmark-comparison-node.md",
+    "update-bench": "pnpm update-bench && pnpm update-bench:bun && pnpm update-bench:deno && pnpm update-bundle-size",
     "update-bench:deno": "deno bench --json --allow-read --allow-env --allow-net --sloppy-imports benchmark/deno/bench.ts > benchmark/results/deno.json && tsx scripts/update-bench-docs.ts deno benchmark/results/deno.json && oxfmt docs/benchmark-comparison-deno.md",
     "update-bench:bun": "bun run benchmark/bun/bench.ts --json > benchmark/results/bun.json && tsx scripts/update-bench-docs.ts bun benchmark/results/bun.json $(bun --version) && oxfmt docs/benchmark-comparison-bun.md",
     "bundle-size": "tsx scripts/bundle-size.ts",
