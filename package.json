@@ -32,6 +32,9 @@
     "zero-dependencies"
   ],
   "homepage": "https://github.com/kbilkis/cron-fast#readme",
+  "bugs": {
+    "url": "https://github.com/kbilkis/cron-fast/issues"
+  },
   "license": "MIT",
   "author": "Kasparas Bilkis kasparas@bilkis.lt",
   "repository": {
