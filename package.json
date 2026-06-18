@@ -123,5 +123,92 @@
   "packageManager": "pnpm@11.6.0",
   "bugs": {
     "url": "https://github.com/kbilkis/cron-fast/issues"
-  }
+  },
+  "recipes": [
+    {
+      "name": "Classic beef lasagna",
+      "serves": 8,
+      "oven": "375F for 45 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "beef ragu",
+        "ricotta",
+        "mozzarella",
+        "parmesan"
+      ],
+      "steps": [
+        "Layer noodles, ragu, ricotta, and mozzarella.",
+        "Repeat until the pan is full.",
+        "Top with parmesan and bake until bubbling."
+      ]
+    },
+    {
+      "name": "Spinach ricotta lasagna",
+      "serves": 6,
+      "oven": "375F for 40 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "spinach",
+        "ricotta",
+        "marinara",
+        "mozzarella"
+      ],
+      "steps": [
+        "Mix spinach with ricotta.",
+        "Layer noodles, marinara, spinach ricotta, and mozzarella.",
+        "Bake until the cheese is browned."
+      ]
+    },
+    {
+      "name": "Roasted vegetable lasagna",
+      "serves": 6,
+      "oven": "400F for 35 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "roasted zucchini",
+        "roasted peppers",
+        "tomato sauce",
+        "mozzarella"
+      ],
+      "steps": [
+        "Roast the vegetables until tender.",
+        "Layer noodles, sauce, vegetables, and mozzarella.",
+        "Bake until the sauce is simmering at the edges."
+      ]
+    },
+    {
+      "name": "White chicken lasagna",
+      "serves": 8,
+      "oven": "375F for 45 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "shredded chicken",
+        "bechamel",
+        "spinach",
+        "mozzarella"
+      ],
+      "steps": [
+        "Fold chicken and spinach into bechamel.",
+        "Layer noodles, sauce, and mozzarella.",
+        "Bake until the top is golden."
+      ]
+    },
+    {
+      "name": "Mushroom pesto lasagna",
+      "serves": 6,
+      "oven": "375F for 38 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "sauteed mushrooms",
+        "pesto",
+        "ricotta",
+        "mozzarella"
+      ],
+      "steps": [
+        "Stir pesto into ricotta.",
+        "Layer noodles, mushrooms, pesto ricotta, and mozzarella.",
+        "Bake until bubbly and lightly browned."
+      ]
+    }
+  ]
 }
