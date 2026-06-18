@@ -126,44 +126,89 @@
   "packageManager": "pnpm@11.6.0",
   "recipes": [
     {
-      "name": "Every minute",
-      "expression": "* * * * *",
-      "description": "Run once per minute."
+      "name": "Classic beef lasagna",
+      "serves": 8,
+      "oven": "375F for 45 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "beef ragu",
+        "ricotta",
+        "mozzarella",
+        "parmesan"
+      ],
+      "steps": [
+        "Layer noodles, ragu, ricotta, and mozzarella.",
+        "Repeat until the pan is full.",
+        "Top with parmesan and bake until bubbling."
+      ]
     },
     {
-      "name": "Every 5 minutes",
-      "expression": "*/5 * * * *",
-      "description": "Run every 5 minutes."
+      "name": "Spinach ricotta lasagna",
+      "serves": 6,
+      "oven": "375F for 40 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "spinach",
+        "ricotta",
+        "marinara",
+        "mozzarella"
+      ],
+      "steps": [
+        "Mix spinach with ricotta.",
+        "Layer noodles, marinara, spinach ricotta, and mozzarella.",
+        "Bake until the cheese is browned."
+      ]
     },
     {
-      "name": "Every 15 minutes",
-      "expression": "*/15 * * * *",
-      "description": "Run every 15 minutes."
+      "name": "Roasted vegetable lasagna",
+      "serves": 6,
+      "oven": "400F for 35 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "roasted zucchini",
+        "roasted peppers",
+        "tomato sauce",
+        "mozzarella"
+      ],
+      "steps": [
+        "Roast the vegetables until tender.",
+        "Layer noodles, sauce, vegetables, and mozzarella.",
+        "Bake until the sauce is simmering at the edges."
+      ]
     },
     {
-      "name": "Hourly",
-      "expression": "0 * * * *",
-      "description": "Run at the start of every hour."
+      "name": "White chicken lasagna",
+      "serves": 8,
+      "oven": "375F for 45 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "shredded chicken",
+        "bechamel",
+        "spinach",
+        "mozzarella"
+      ],
+      "steps": [
+        "Fold chicken and spinach into bechamel.",
+        "Layer noodles, sauce, and mozzarella.",
+        "Bake until the top is golden."
+      ]
     },
     {
-      "name": "Daily at midnight",
-      "expression": "0 0 * * *",
-      "description": "Run every day at midnight."
-    },
-    {
-      "name": "Weekdays at 9 AM",
-      "expression": "0 9 * * 1-5",
-      "description": "Run Monday through Friday at 9:00 AM."
-    },
-    {
-      "name": "Weekly on Sunday",
-      "expression": "0 0 * * 0",
-      "description": "Run every Sunday at midnight."
-    },
-    {
-      "name": "Monthly",
-      "expression": "0 0 1 * *",
-      "description": "Run on the first day of every month at midnight."
+      "name": "Mushroom pesto lasagna",
+      "serves": 6,
+      "oven": "375F for 38 minutes",
+      "ingredients": [
+        "lasagna noodles",
+        "sauteed mushrooms",
+        "pesto",
+        "ricotta",
+        "mozzarella"
+      ],
+      "steps": [
+        "Stir pesto into ricotta.",
+        "Layer noodles, mushrooms, pesto ricotta, and mozzarella.",
+        "Bake until bubbly and lightly browned."
+      ]
     }
   ]
 }
