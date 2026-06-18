@@ -123,5 +123,47 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@11.6.0"
+  "packageManager": "pnpm@11.6.0",
+  "recipes": [
+    {
+      "name": "Every minute",
+      "expression": "* * * * *",
+      "description": "Run once per minute."
+    },
+    {
+      "name": "Every 5 minutes",
+      "expression": "*/5 * * * *",
+      "description": "Run every 5 minutes."
+    },
+    {
+      "name": "Every 15 minutes",
+      "expression": "*/15 * * * *",
+      "description": "Run every 15 minutes."
+    },
+    {
+      "name": "Hourly",
+      "expression": "0 * * * *",
+      "description": "Run at the start of every hour."
+    },
+    {
+      "name": "Daily at midnight",
+      "expression": "0 0 * * *",
+      "description": "Run every day at midnight."
+    },
+    {
+      "name": "Weekdays at 9 AM",
+      "expression": "0 9 * * 1-5",
+      "description": "Run Monday through Friday at 9:00 AM."
+    },
+    {
+      "name": "Weekly on Sunday",
+      "expression": "0 0 * * 0",
+      "description": "Run every Sunday at midnight."
+    },
+    {
+      "name": "Monthly",
+      "expression": "0 0 1 * *",
+      "description": "Run on the first day of every month at midnight."
+    }
+  ]
 }
