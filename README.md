@@ -26,7 +26,7 @@ Fast and tiny JavaScript/TypeScript cron parser with timezone support. Works eve
 ## Why cron-fast?
 
 - **10x+ faster** than other popular cron libraries on scheduling operations
-- **~8× smaller** bundle than the next most popular alternative (see [Bundle Size](#bundle-size) below)
+- **~8x smaller** bundle than the next most popular alternative (see [Bundle Size](#bundle-size) below)
 - **Zero dependencies** — nothing to audit, nothing to break
 - **Universal runtime** — same code in Node.js, Deno, Bun, Cloudflare Workers, and browsers
 - **Tree-shakeable** — `import { isValid }` adds < 1 KB to your bundle
@@ -38,19 +38,19 @@ Fast and tiny JavaScript/TypeScript cron parser with timezone support. Works eve
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v3.2.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v24.16.0
+> Tested with cron-fast v3.3.0, croner v10.0.1, cron-parser v5.5.0, cron-schedule v6.0.0 on Node.js v24.16.0
 
 | Operation     | cron-fast       | cron-schedule | cron-parser | croner    |
 | ------------- | --------------- | ------------- | ----------- | --------- |
-| Next run      | **796k ops/s**  | 333k ops/s    | 35k ops/s   | 31k ops/s |
-| Next 100 runs | **23k ops/s**   | 15k ops/s     | 1k ops/s    | 2k ops/s  |
-| Previous run  | **895k ops/s**  | 354k ops/s    | 39k ops/s   | 32k ops/s |
-| Validation    | **1786k ops/s** | 459k ops/s    | 97k ops/s   | 34k ops/s |
-| Parsing       | **1779k ops/s** | 452k ops/s    | 95k ops/s   | 33k ops/s |
+| Next run      | **929k ops/s**  | 329k ops/s    | 35k ops/s   | 31k ops/s |
+| Next 100 runs | **24k ops/s**   | 15k ops/s     | 1k ops/s    | 2k ops/s  |
+| Previous run  | **1003k ops/s** | 345k ops/s    | 38k ops/s   | 30k ops/s |
+| Validation    | **1732k ops/s** | 438k ops/s    | 93k ops/s   | 33k ops/s |
+| Parsing       | **1653k ops/s** | 431k ops/s    | 87k ops/s   | 32k ops/s |
 
 See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
-Run benchmarks yourself: `pnpm benchmark`
+Run benchmarks yourself: `pnpm bench`
 
 ## Installation
 
@@ -216,20 +216,20 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.2.0):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.3.0):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 21.70 KB | 9.99 KB  | **3.57 KB** |
-| `nextRun only                                        ` | 12.73 KB | 5.79 KB  | **2.14 KB** |
-| `previousRun only                                    ` | 12.73 KB | 5.79 KB  | **2.14 KB** |
-| `nextRuns only                                       ` | 12.96 KB | 5.88 KB  | **2.19 KB** |
+| `Full bundle (all exports)                           ` | 21.88 KB | 10.08 KB | **3.61 KB** |
+| `nextRun only                                        ` | 12.91 KB | 5.88 KB  | **2.19 KB** |
+| `previousRun only                                    ` | 12.92 KB | 5.88 KB  | **2.19 KB** |
+| `nextRuns only                                       ` | 13.15 KB | 5.97 KB  | **2.24 KB** |
 | `isValid only                                        ` | 4.44 KB  | 2.22 KB  | **984 B**   |
 | `parse only                                          ` | 4.32 KB  | 2.18 KB  | **961 B**   |
 | `describe only                                       ` | 11.54 KB | 5.57 KB  | **2.11 KB** |
 | `isMatch only                                        ` | 6.04 KB  | 2.96 KB  | **1.26 KB** |
 | `Validation only (isValid + parse)                   ` | 4.45 KB  | 2.23 KB  | **986 B**   |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.74 KB | 6.23 KB  | **2.25 KB** |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 13.93 KB | 6.32 KB  | **2.30 KB** |
 
 Import only what you need:
 
@@ -297,7 +297,7 @@ console.log(parsed);
 //   minute: [0, 15, 30, 45],
 //   hour: [9, 10, 11, 12, 13, 14, 15, 16, 17],
 //   day: [1-31],
-//   month: [1-12],
+//   month: [0-11],
 //   weekday: [1, 2, 3, 4, 5]
 // }
 ```

@@ -1,6 +1,6 @@
 {
   "name": "@kbilkis/cron-fast",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Fast and tiny JavaScript/TypeScript cron parser with timezone support - works in Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.",
   "keywords": [
     "javascript",
@@ -30,6 +30,13 @@
     "esm",
     "tree-shakeable"
   ],
+  "homepage": "https://github.com/kbilkis/cron-fast#readme",
+  "license": "MIT",
+  "author": "Kasparas Bilkis kasparas@bilkis.lt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kbilkis/cron-fast.git"
+  },
   "exports": "./src/index.ts",
   "publish": {
     "include": ["src/**/*.ts", "README.md", "LICENSE"]

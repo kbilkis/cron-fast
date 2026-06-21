@@ -20,7 +20,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 ### Prerequisites
 
 - Node.js >= 22.0.0
-- pnpm (recommended) or npm
+- pnpm
 
 ### Installation
 
@@ -91,7 +91,7 @@ pnpm typecheck
 pnpm build
 
 # Run benchmarks
-pnpm benchmark
+pnpm bench
 ```
 
 ### Testing
@@ -99,10 +99,6 @@ pnpm benchmark
 - Write tests for all new features and bug fixes
 - Ensure all existing tests pass
 - Aim for high test coverage
-- Test across runtimes if making significant changes:
-  - Node.js: `pnpm test`
-  - Deno: `pnpm benchmark:deno`
-  - Bun: `pnpm benchmark:bun`
 
 ## Pull Request Guidelines
 

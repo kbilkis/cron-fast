@@ -101,7 +101,11 @@ export function findPrevious(values: number[], target: number): number | null {
  * @param month - The month (0-indexed: 0 = January, 11 = December)
  * @returns The number of days in the month
  */
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
 export function getDaysInMonth(year: number, month: number): number {
-  // Create date for first day of next month, then go back one day
-  return new Date(year, month + 1, 0).getDate();
+  // JS Date treats years 0-99 as 1900-1999
+  if (year >= 0 && year < 100) year += 1900;
+  if (month === 1 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0)) return 29;
+  return DAYS_IN_MONTH[month];
 }
