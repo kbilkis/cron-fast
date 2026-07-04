@@ -40,54 +40,69 @@ const WEEKDAY_NAMES: Record<string, number> = {
  *
  * @throws {Error} If the expression is invalid
  */
+function isWs(c: number): boolean {
+  return c === 32 || (c >= 9 && c <= 13);
+}
+
 export function parse(expression: string): ParsedCron {
-  const trimmed = expression.trim();
-  if (!trimmed) throw new Error(`Invalid cron expression: "${expression}"`);
+  const s = expression;
+  const n = s.length;
 
-  const parts = trimmed.split(/\s+/);
-  if (parts.length !== 5)
+  // Single-pass whitespace tokenization into 5 fields (no regex, no substring allocs)
+  const bounds: number[] = [];
+  let p = 0;
+  while (p < n && isWs(s.charCodeAt(p))) p++;
+  while (p < n) {
+    const lo = p;
+    while (p < n && !isWs(s.charCodeAt(p))) p++;
+    bounds.push(lo, p);
+    while (p < n && isWs(s.charCodeAt(p))) p++;
+  }
+
+  if (bounds.length === 0) throw new Error(`Invalid cron expression: "${expression}"`);
+  if (bounds.length !== 10)
     throw new Error(
-      `Invalid cron expression: "${expression}" - expected 5 fields, got ${parts.length}`,
+      `Invalid cron expression: "${expression}" - expected 5 fields, got ${bounds.length / 2}`,
     );
 
-  const [minuteStr, hourStr, dayStr, monthStr, weekdayStr] = parts;
+  const minute = parseFieldAt(s, bounds[0], bounds[1], 0, 59);
+  if (!minute) throw new Error(`Invalid cron expression: "${expression}" - invalid minute field`);
 
-  const minute = parseField(minuteStr, 0, 59);
-  if (!minute)
-    throw new Error(
-      `Invalid cron expression: "${expression}" - invalid minute field "${minuteStr}"`,
-    );
+  const hour = parseFieldAt(s, bounds[2], bounds[3], 0, 23);
+  if (!hour) throw new Error(`Invalid cron expression: "${expression}" - invalid hour field`);
 
-  const hour = parseField(hourStr, 0, 23);
-  if (!hour)
-    throw new Error(`Invalid cron expression: "${expression}" - invalid hour field "${hourStr}"`);
+  const day = parseFieldAt(s, bounds[4], bounds[5], 1, 31);
+  if (!day) throw new Error(`Invalid cron expression: "${expression}" - invalid day field`);
 
-  const day = parseField(dayStr, 1, 31);
-  if (!day)
-    throw new Error(`Invalid cron expression: "${expression}" - invalid day field "${dayStr}"`);
+  const month = parseFieldAt(s, bounds[6], bounds[7], 1, 12, MONTH_NAMES);
+  if (!month) throw new Error(`Invalid cron expression: "${expression}" - invalid month field`);
 
-  const month = parseField(monthStr, 1, 12, MONTH_NAMES);
-  if (!month)
-    throw new Error(`Invalid cron expression: "${expression}" - invalid month field "${monthStr}"`);
-
-  const weekdayRaw = parseField(weekdayStr, 0, 7, WEEKDAY_NAMES);
+  const weekdayRaw = parseFieldAt(s, bounds[8], bounds[9], 0, 7, WEEKDAY_NAMES);
   if (!weekdayRaw)
-    throw new Error(
-      `Invalid cron expression: "${expression}" - invalid weekday field "${weekdayStr}"`,
-    );
+    throw new Error(`Invalid cron expression: "${expression}" - invalid weekday field`);
 
-  const weekdays = weekdayRaw
-    .filter((d) => d !== 7 || !weekdayRaw.includes(0))
-    .map((d) => (d === 7 ? 0 : d));
+  // Normalize Sunday (7 -> 0), single pass (avoid filter+map allocations)
+  const hasZero = weekdayRaw.indexOf(0) !== -1;
+  const weekdays: number[] = [];
+  for (const d of weekdayRaw) {
+    if (d === 7) {
+      if (!hasZero) weekdays.push(0);
+    } else {
+      weekdays.push(d);
+    }
+  }
+
+  // month is 1-indexed from parsing; shift to 0-indexed in place
+  for (let i = 0; i < month.length; i++) month[i]--;
 
   const parsed: ParsedCron = {
     minute,
     hour,
     day,
-    month: month.map((m) => m - 1),
+    month,
     weekday: weekdays,
-    dayIsWildcard: dayStr.trim() === "*",
-    weekdayIsWildcard: weekdayStr.trim() === "*",
+    dayIsWildcard: isStar(s, bounds[4], bounds[5]),
+    weekdayIsWildcard: isStar(s, bounds[8], bounds[9]),
   };
 
   if (!hasValidDayMonthCombinations(parsed))
@@ -117,90 +132,118 @@ function hasValidDayMonthCombinations(parsed: ParsedCron): boolean {
   return false;
 }
 
+function isStar(s: string, lo: number, hi: number): boolean {
+  return hi - lo === 1 && s.charCodeAt(lo) === 42; // '*'
+}
+
 /**
- * Parse a single cron field (e.g., star-slash-5, 1-10, 1,3,5)
+ * Parse a single cron field over substring s[lo..hi) (char-level, no split/substring allocs).
+ * Semantics mirror the original: star, a, a-b, a-b/N, star/N, a/N, comma lists.
  */
-function parseField(
-  field: string,
+function parseFieldAt(
+  s: string,
+  lo: number,
+  hi: number,
   min: number,
   max: number,
   names?: Record<string, number>,
 ): number[] | null {
-  const values: number[] = [];
-
-  if (field === "*") {
+  if (isStar(s, lo, hi)) {
+    const values: number[] = [];
     for (let i = min; i <= max; i++) values.push(i);
     return values;
   }
 
-  const parts = field.split(",");
+  const values: number[] = [];
+  let i = lo;
 
-  for (const part of parts) {
-    // Handle step values (e.g., */5 or 10-20/2)
-    if (part.includes("/")) {
-      const [range, stepStr] = part.split("/");
-      const step = parseInt(stepStr, 10);
-      if (isNaN(step) || step <= 0) return null;
-
-      let start = min;
-      let end = max;
-
-      if (range !== "*") {
-        if (range.includes("-")) {
-          const rangeParts = range.split("-");
-          if (rangeParts.length > 2) return null;
-          const startVal = parseValue(rangeParts[0], names);
-          const endVal = parseValue(rangeParts[1], names);
-          if (startVal === null || endVal === null) return null;
-          start = startVal;
-          end = endVal;
-        } else {
-          const v = parseValue(range, names);
-          if (v === null) return null;
-          start = v;
-        }
+  // Read a value at i (advances i in place). Returns the value, or -1 if invalid.
+  const read = (): number => {
+    const c = s.charCodeAt(i);
+    if (c >= 48 && c <= 57) {
+      // digits
+      let v = 0;
+      while (i < hi) {
+        const d = s.charCodeAt(i);
+        if (d < 48 || d > 57) break;
+        v = v * 10 + (d - 48);
+        i++;
       }
+      return v;
+    }
+    if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) {
+      // name (rare)
+      const start = i;
+      while (i < hi) {
+        const d = s.charCodeAt(i);
+        if (!((d >= 65 && d <= 90) || (d >= 97 && d <= 122))) break;
+        i++;
+      }
+      const nm = names && names[s.slice(start, i).toLowerCase()];
+      return nm !== undefined ? nm : -1;
+    }
+    return -1;
+  };
 
-      for (let i = start; i <= end; i += step) {
-        if (i >= min && i <= max) values.push(i);
+  while (i < hi) {
+    let isStar2 = false;
+    let isRange = false;
+    let start: number;
+    let end: number;
+
+    if (s.charCodeAt(i) === 42) {
+      // '*'
+      isStar2 = true;
+      start = min;
+      end = max;
+      i++;
+    } else {
+      start = read();
+      if (start < 0) return null;
+      if (i < hi && s.charCodeAt(i) === 45) {
+        // '-'
+        isRange = true;
+        i++;
+        end = read();
+        if (end < 0) return null;
+        if (start > end) return null;
+      } else {
+        end = start;
       }
     }
-    // Handle ranges (e.g., 1-5)
-    else if (part.includes("-")) {
-      const rangeParts = part.split("-");
-      if (rangeParts.length > 2) return null;
 
-      const start = parseValue(rangeParts[0], names);
-      const end = parseValue(rangeParts[1], names);
-      if (start === null || end === null) return null;
-      if (start > end) return null;
-
-      for (let i = start; i <= end; i++) {
-        if (i >= min && i <= max) values.push(i);
-      }
+    let step = 1;
+    let hasStep = false;
+    if (i < hi && s.charCodeAt(i) === 47) {
+      // '/'
+      hasStep = true;
+      i++;
+      step = read();
+      if (step <= 0) return null;
+      // single value + step → range to max
+      if (!isStar2 && !isRange) end = max;
     }
-    // Handle single values
-    else {
-      const value = parseValue(part, names);
-      if (value === null) return null;
-      if (value < min || value > max) return null;
-      values.push(value);
+
+    if (hasStep || isStar2 || isRange) {
+      for (let v = start; v <= end; v += step) {
+        if (v >= min && v <= max) values.push(v);
+      }
+    } else {
+      // pure single value: validate strictly (matches original behavior)
+      if (start < min || start > max) return null;
+      values.push(start);
+    }
+
+    if (i < hi) {
+      if (s.charCodeAt(i) === 44) i++;
+      // ','
+      else return null;
+      if (i >= hi) return null; // trailing comma
     }
   }
 
   if (values.length === 0) return null;
-  return values.sort((a, b) => a - b).filter((v, i, arr) => i === 0 || arr[i - 1] !== v);
-}
-
-/**
- * Parse a single value (number or name)
- */
-function parseValue(value: string, names?: Record<string, number>): number | null {
-  const lower = value.toLowerCase();
-  if (names && lower in names) return names[lower];
-
-  const num = parseInt(value, 10);
-  return isNaN(num) ? null : num;
+  return values.sort((a, b) => a - b).filter((v, idx, arr) => idx === 0 || arr[idx - 1] !== v);
 }
 
 /** Validate a cron expression */

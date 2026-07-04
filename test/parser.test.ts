@@ -25,6 +25,11 @@ describe("parser", () => {
         expect(result.hour).toHaveLength(24);
       });
 
+      it("should reject non-ASCII whitespace (NBSP) as field separator", () => {
+        // U+00A0 is outside the ASCII whitespace range (9-13, 32) the tokenizer accepts.
+        expect(() => parse("0 0\u00a00 1 0")).toThrow();
+      });
+
       it("should handle tabs between fields", () => {
         const result = parse("*\t*\t*\t*\t*");
         expect(result.minute).toHaveLength(60);
@@ -45,6 +50,12 @@ describe("parser", () => {
       it("should set wildcard flags to false for ranges equivalent to wildcard", () => {
         // 1-31 is equivalent to * for days, but should NOT set the wildcard flag
         const result = parse("0 0 1-31 1 0");
+        expect(result.dayIsWildcard).toBe(false);
+      });
+
+      it("should set wildcard flag false for star-with-step even when equivalent to wildcard", () => {
+        // */1 is semantically == *, but is not lexically '*' so the flag stays false.
+        const result = parse("0 0 */1 * *");
         expect(result.dayIsWildcard).toBe(false);
       });
     });
@@ -87,6 +98,12 @@ describe("parser", () => {
         const result = parse("5,5,5,10,10,15 1,1,1 * * *");
         expect(result.minute).toEqual([5, 10, 15]); // No duplicates
         expect(result.hour).toEqual([1]); // No duplicates
+      });
+
+      it("should handle leading zeros in numeric values", () => {
+        expect(parse("007 0 1 1 0").minute).toEqual([7]);
+        expect(parse("000 0 1 1 0").minute).toEqual([0]);
+        expect(parse("059 0 1 1 0").minute).toEqual([59]);
       });
     });
 
@@ -162,6 +179,11 @@ describe("parser", () => {
       it("should handle large step that produces single value", () => {
         const result = parse("0-10/100 * * * *");
         expect(result.minute).toEqual([0]); // Only 0 is within range and divisible by step from start
+      });
+
+      it("should handle single-element range with step (start equals end)", () => {
+        const result = parse("5-5/2 * * * *");
+        expect(result.minute).toEqual([5]);
       });
 
       it("should handle step that does not evenly divide range", () => {
@@ -241,6 +263,24 @@ describe("parser", () => {
         const result = parse("5,5-10,7,10 * * * *");
         expect(result.minute).toEqual([5, 6, 7, 8, 9, 10]);
         expect(result.minute.length).toBe(new Set(result.minute).size); // No duplicates
+      });
+
+      it("should expand bare star inside comma list to full range", () => {
+        const r1 = parse("*,5 * * * *");
+        expect(r1.minute).toHaveLength(60);
+        expect(r1.minute[0]).toBe(0);
+        expect(r1.minute[59]).toBe(59);
+
+        const r2 = parse("5,* * * * *");
+        expect(r2.minute).toHaveLength(60);
+        expect(r2.minute[0]).toBe(0);
+      });
+
+      it("should mix bare star with ranges in comma list", () => {
+        const result = parse("*,10-12 * * * *");
+        expect(result.minute).toHaveLength(60);
+        expect(result.minute[10]).toBe(10);
+        expect(result.minute[12]).toBe(12);
       });
     });
 
@@ -342,6 +382,67 @@ describe("parser", () => {
         const result = parse("0 0 * * mon-fri/2");
         expect(result.weekday).toEqual([1, 3, 5]);
       });
+
+      it("should normalize range ending at 7 (Sunday) to include 0", () => {
+        const result = parse("0 0 * * 1-7");
+        expect(result.weekday).toEqual([1, 2, 3, 4, 5, 6, 0]);
+      });
+
+      it("should drop 7 from full range when 0 is already present (0-7)", () => {
+        const result = parse("0 0 * * 0-7");
+        expect(result.weekday).toEqual([0, 1, 2, 3, 4, 5, 6]);
+      });
+
+      it("should deduplicate redundant Sundays (7,7)", () => {
+        const result = parse("0 0 * * 7,7");
+        expect(result.weekday).toEqual([0]);
+      });
+
+      it("should merge explicit 7 into range already containing 0 (0-6,7)", () => {
+        const result = parse("0 0 * * 0-6,7");
+        expect(result.weekday).toEqual([0, 1, 2, 3, 4, 5, 6]);
+      });
+
+      it("should normalize Saturday+Sunday pair (6,7) to [6,0]", () => {
+        const result = parse("0 0 * * 6,7");
+        expect(result.weekday).toEqual([6, 0]);
+      });
+
+      it("should apply step to single weekday name and normalize trailing 7", () => {
+        // mon/2 expands to mon,wed,fri,sun(=7), then 7 normalizes to 0
+        const result = parse("0 0 * * mon/2");
+        expect(result.weekday).toEqual([1, 3, 5, 0]);
+      });
+
+      it("should parse cross-type range (weekday name to number)", () => {
+        const result = parse("0 0 * * mon-5");
+        expect(result.weekday).toEqual([1, 2, 3, 4, 5]);
+      });
+
+      it("should normalize numeric 7 mixed with weekday name in comma list", () => {
+        const result = parse("0 0 * * mon,7");
+        expect(result.weekday).toEqual([1, 0]);
+      });
+
+      it("should deduplicate name and number resolving to same weekday", () => {
+        expect(parse("0 0 * * sun,0").weekday).toEqual([0]);
+        expect(parse("0 0 * * mon,1").weekday).toEqual([1]);
+      });
+
+      it("should normalize 7 from a second range in comma list (1-5,6-7)", () => {
+        const result = parse("0 0 * * 1-5,6-7");
+        expect(result.weekday).toEqual([1, 2, 3, 4, 5, 6, 0]);
+      });
+
+      it("should collapse range-to-7 plus explicit 0 (1-7,0)", () => {
+        const result = parse("0 0 * * 1-7,0");
+        expect(result.weekday).toEqual([0, 1, 2, 3, 4, 5, 6]);
+      });
+
+      it("should mix stepped weekday range with literal Sunday", () => {
+        const result = parse("0 0 * * mon-fri/2,0");
+        expect(result.weekday).toEqual([0, 1, 3, 5]);
+      });
     });
 
     describe("error cases - empty and malformed input", () => {
@@ -414,6 +515,18 @@ describe("parser", () => {
       it("should return null for invalid end value in range with step", () => {
         expect(() => parse("10-xyz/5 * * * *")).toThrow();
       });
+
+      it("should return null for multiple step slashes (5/2/3)", () => {
+        expect(() => parse("5/2/3 * * * *")).toThrow();
+      });
+
+      it("should return null for step zero in explicit range (5-10/0)", () => {
+        expect(() => parse("5-10/0 * * * *")).toThrow();
+      });
+
+      it("should return null for step zero on named range (mon-fri/0)", () => {
+        expect(() => parse("0 0 * * mon-fri/0")).toThrow();
+      });
     });
 
     describe("error cases - ranges", () => {
@@ -437,6 +550,14 @@ describe("parser", () => {
         // Previously this was a parser quirk that silently accepted "1-5-10" as "1-5".
         // Now we return null to catch malformed input early.
         expect(() => parse("1-5-10 * * * *")).toThrow();
+      });
+
+      it("should return null for reverse range with step (5-4/2)", () => {
+        expect(() => parse("5-4/2 * * * *")).toThrow();
+      });
+
+      it("should return null for dangling dash after value (5-)", () => {
+        expect(() => parse("5- * * * *")).toThrow();
       });
     });
 
@@ -481,6 +602,10 @@ describe("parser", () => {
       it("should return null for weekday out of range (8)", () => {
         expect(() => parse("* * * * 8")).toThrow();
       });
+
+      it("should return null for very large numeric value (overflow)", () => {
+        expect(() => parse("99999999999999999999 * * * *")).toThrow();
+      });
     });
 
     describe("error cases - invalid value names", () => {
@@ -506,6 +631,21 @@ describe("parser", () => {
 
       it("should return null for special characters in value", () => {
         expect(() => parse("@ * * * *")).toThrow();
+      });
+
+      it.each(["5x", "1.5", "+5", "5*", "5e2"])(
+        "should reject value with trailing non-numeric characters: %s",
+        (field) => {
+          expect(() => parse(`${field} * * * *`)).toThrow();
+        },
+      );
+
+      it("should reject weekday name used in month field", () => {
+        expect(() => parse("0 0 1 mon 0")).toThrow();
+      });
+
+      it("should reject month name used in weekday field", () => {
+        expect(() => parse("0 0 * * jan")).toThrow();
       });
     });
 
