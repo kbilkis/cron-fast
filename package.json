@@ -105,13 +105,13 @@
     "esbuild": "^0.28.1",
     "lint-staged": "^17.0.8",
     "mitata": "^1.0.34",
-    "oxfmt": "^0.57.0",
+    "oxfmt": "^0.58.0",
     "oxlint": "^1.72.0",
     "simple-git-hooks": "^2.13.1",
     "tsdown": "^0.22.3",
     "tsx": "^4.22.5",
-    "typescript": "^6.0.3",
-    "vitest": "4.1.9"
+    "typescript": "^7.0.2",
+    "vitest": "4.1.10"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged",
