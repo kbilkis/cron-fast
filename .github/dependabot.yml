@@ -9,14 +9,9 @@ updates:
       default-days: 1
     open-pull-requests-limit: 10
     groups:
-      dev-dependencies:
+      all-dependencies:
         patterns:
-          - "@types/*"
-          - "@vitest/*"
-          - "vitest"
-          - "typescript"
-          - "oxlint"
-          - "oxfmt"
+          - "*"
     commit-message:
       prefix: "chore"
       include: "scope"
