@@ -10,11 +10,11 @@ export function matches(parsed: ParsedCron, date: Date): boolean {
   const month = date.getUTCMonth(); // 0-indexed (0 = Jan, 11 = Dec)
   const weekday = date.getUTCDay();
 
-  // Check if all fields match
+  // Check if all fields match; wildcard fields skip the .includes scan
   return (
-    parsed.minute.includes(minute) &&
-    parsed.hour.includes(hour) &&
-    parsed.month.includes(month) &&
+    (parsed.minuteIsWildcard || parsed.minute.includes(minute)) &&
+    (parsed.hourIsWildcard || parsed.hour.includes(hour)) &&
+    (parsed.monthIsWildcard || parsed.month.includes(month)) &&
     matchesDayOrWeekday(parsed, day, weekday)
   );
 }
@@ -39,27 +39,24 @@ export function matchesDayOrWeekday(
   weekday: number,
   daysInMonth?: number,
 ): boolean {
-  const dayMatches =
+  // Both wildcards: always matches (skip both .includes scans)
+  if (parsed.dayIsWildcard && parsed.weekdayIsWildcard) return true;
+
+  // Only weekday restricted
+  if (parsed.dayIsWildcard) return parsed.weekday.includes(weekday);
+
+  // Only day restricted
+  if (parsed.weekdayIsWildcard) {
+    if (daysInMonth !== undefined && day > daysInMonth) return false;
+    return parsed.day.includes(day);
+  }
+
+  // Both restricted -> OR
+  const dayOk =
     daysInMonth !== undefined
-      ? parsed.day.includes(day) && day <= daysInMonth
+      ? day <= daysInMonth && parsed.day.includes(day)
       : parsed.day.includes(day);
-  const weekdayMatches = parsed.weekday.includes(weekday);
-
-  // If both are restricted, use OR logic (standard cron behavior)
-  if (isOrMode(parsed)) {
-    return dayMatches || weekdayMatches;
-  }
-
-  // If only one is restricted, it must match
-  if (!parsed.dayIsWildcard) {
-    return dayMatches;
-  }
-  if (!parsed.weekdayIsWildcard) {
-    return weekdayMatches;
-  }
-
-  // Both wildcards, always matches
-  return true;
+  return dayOk || parsed.weekday.includes(weekday);
 }
 
 /**

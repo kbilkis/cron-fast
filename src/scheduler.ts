@@ -141,8 +141,8 @@ function advanceDate(parsed: ParsedCron, date: Date, dir: Direction): void {
   const weekday = date.getUTCDay();
   const daysInMonth = getDaysInMonth(year, month);
 
-  // Month mismatch
-  if (!parsed.month.includes(month)) {
+  // Month mismatch (wildcard field skips the .includes scan)
+  if (!(parsed.monthIsWildcard || parsed.month.includes(month))) {
     moveToMonth(parsed, date, dir, month, year);
     return;
   }
@@ -153,8 +153,8 @@ function advanceDate(parsed: ParsedCron, date: Date, dir: Direction): void {
     return;
   }
 
-  // Hour mismatch
-  if (!parsed.hour.includes(hour)) {
+  // Hour mismatch (wildcard field skips the .includes scan)
+  if (!(parsed.hourIsWildcard || parsed.hour.includes(hour))) {
     const targetHour = d.find(parsed.hour, hour + d.offset);
     if (targetHour !== null) {
       // Found valid hour in same day → reset minute to boundary
@@ -167,8 +167,8 @@ function advanceDate(parsed: ParsedCron, date: Date, dir: Direction): void {
     return;
   }
 
-  // Minute mismatch
-  if (!parsed.minute.includes(minute)) {
+  // Minute mismatch (wildcard field skips the .includes scan)
+  if (!(parsed.minuteIsWildcard || parsed.minute.includes(minute))) {
     const targetMinute = d.find(parsed.minute, minute + d.offset);
     if (targetMinute !== null) {
       // Found valid minute in same hour

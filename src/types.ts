@@ -21,6 +21,9 @@ export interface ParsedCron {
   day: number[]; // 1-31
   month: number[]; // 0-11 (0 = January, 11 = December)
   weekday: number[]; // 0-6 (0 = Sunday, 6 = Saturday)
+  minuteIsWildcard: boolean; // true if minute field was '*'
+  hourIsWildcard: boolean; // true if hour field was '*'
   dayIsWildcard: boolean; // true if day field was * (not explicitly listed)
+  monthIsWildcard: boolean; // true if month field was '*'
   weekdayIsWildcard: boolean; // true if weekday field was * (not explicitly listed)
 }

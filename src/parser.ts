@@ -44,6 +44,19 @@ function isWs(c: number): boolean {
   return c === 32 || (c >= 9 && c <= 13);
 }
 
+function rangeArray(lo: number, hi: number): number[] {
+  const a: number[] = [];
+  for (let i = lo; i <= hi; i++) a.push(i);
+  return a;
+}
+
+// Shared wildcard expansions; returned by reference for `*` fields.
+const WC_MINUTE = rangeArray(0, 59);
+const WC_HOUR = rangeArray(0, 23);
+const WC_DAY = rangeArray(1, 31);
+const WC_MONTH = rangeArray(0, 11);
+const WC_WEEKDAY = rangeArray(0, 6);
+
 export function parse(expression: string): ParsedCron {
   const s = expression;
   const n = s.length;
@@ -65,23 +78,59 @@ export function parse(expression: string): ParsedCron {
       `Invalid cron expression: "${expression}" - expected 5 fields, got ${bounds.length / 2}`,
     );
 
-  const minute = parseFieldAt(s, bounds[0], bounds[1], 0, 59);
+  const minuteIsWildcard = isStar(s, bounds[0], bounds[1]);
+  const minute = minuteIsWildcard ? WC_MINUTE : parseFieldAt(s, bounds[0], bounds[1], 0, 59);
   if (!minute) throw new Error(`Invalid cron expression: "${expression}" - invalid minute field`);
 
-  const hour = parseFieldAt(s, bounds[2], bounds[3], 0, 23);
+  const hourIsWildcard = isStar(s, bounds[2], bounds[3]);
+  const hour = hourIsWildcard ? WC_HOUR : parseFieldAt(s, bounds[2], bounds[3], 0, 23);
   if (!hour) throw new Error(`Invalid cron expression: "${expression}" - invalid hour field`);
 
-  const day = parseFieldAt(s, bounds[4], bounds[5], 1, 31);
+  const dayIsWildcard = isStar(s, bounds[4], bounds[5]);
+  const day = dayIsWildcard ? WC_DAY : parseFieldAt(s, bounds[4], bounds[5], 1, 31);
   if (!day) throw new Error(`Invalid cron expression: "${expression}" - invalid day field`);
 
-  const month = parseFieldAt(s, bounds[6], bounds[7], 1, 12, MONTH_NAMES);
+  const monthIsWildcard = isStar(s, bounds[6], bounds[7]);
+  const month = monthIsWildcard
+    ? WC_MONTH
+    : parseFieldAt(s, bounds[6], bounds[7], 1, 12, MONTH_NAMES);
   if (!month) throw new Error(`Invalid cron expression: "${expression}" - invalid month field`);
 
-  const weekdayRaw = parseFieldAt(s, bounds[8], bounds[9], 0, 7, WEEKDAY_NAMES);
-  if (!weekdayRaw)
+  const weekdayIsWildcard = isStar(s, bounds[8], bounds[9]);
+  const weekdayRaw = weekdayIsWildcard
+    ? null
+    : parseFieldAt(s, bounds[8], bounds[9], 0, 7, WEEKDAY_NAMES);
+  if (!weekdayIsWildcard && !weekdayRaw)
     throw new Error(`Invalid cron expression: "${expression}" - invalid weekday field`);
 
-  // Normalize Sunday (7 -> 0), single pass (avoid filter+map allocations)
+  // Normalize Sunday (7 -> 0); wildcard uses the pre-normalized constant.
+  const weekdays = weekdayIsWildcard ? WC_WEEKDAY : normalizeWeekday(weekdayRaw as number[]);
+
+  // month is 1-indexed from parsing; shift to 0-indexed in place (skip wildcard).
+  if (!monthIsWildcard) {
+    for (let i = 0; i < month.length; i++) month[i]--;
+  }
+
+  const parsed: ParsedCron = {
+    minute,
+    hour,
+    day,
+    month,
+    weekday: weekdays,
+    minuteIsWildcard,
+    hourIsWildcard,
+    dayIsWildcard,
+    monthIsWildcard,
+    weekdayIsWildcard,
+  };
+
+  if (!hasValidDayMonthCombinations(parsed))
+    throw new Error(`Invalid cron expression: "${expression}" - impossible day/month combination`);
+
+  return parsed;
+}
+
+function normalizeWeekday(weekdayRaw: number[]): number[] {
   const hasZero = weekdayRaw.indexOf(0) !== -1;
   const weekdays: number[] = [];
   for (const d of weekdayRaw) {
@@ -91,24 +140,7 @@ export function parse(expression: string): ParsedCron {
       weekdays.push(d);
     }
   }
-
-  // month is 1-indexed from parsing; shift to 0-indexed in place
-  for (let i = 0; i < month.length; i++) month[i]--;
-
-  const parsed: ParsedCron = {
-    minute,
-    hour,
-    day,
-    month,
-    weekday: weekdays,
-    dayIsWildcard: isStar(s, bounds[4], bounds[5]),
-    weekdayIsWildcard: isStar(s, bounds[8], bounds[9]),
-  };
-
-  if (!hasValidDayMonthCombinations(parsed))
-    throw new Error(`Invalid cron expression: "${expression}" - impossible day/month combination`);
-
-  return parsed;
+  return weekdays;
 }
 
 /**
