@@ -6,9 +6,43 @@ import { CronExpressionParser } from "cron-parser";
 import { parseCronExpression } from "cron-schedule";
 import cronValidateModule from "cron-validate";
 
-import { executionCases, validationCases, nextRunsCases } from "../cases.ts";
+import { executionCases, validationCases, nextRunsCases, validationVariedCases } from "../cases.ts";
 
 const cronValidate = (cronValidateModule as any).default || cronValidateModule;
+
+// --- validateVaried (anti-cache: cycle unique expressions so memoization can't win) ---
+
+{
+  const VARIED = validationVariedCases;
+  const N = VARIED.length;
+  let i = 0;
+  const next = (): string => VARIED[i++ % N];
+  summary(() => {
+    bench(`cron-fast: validateVaried varied`, () => isValid(next()));
+    bench(`cron-validate: validateVaried varied`, () => cronValidate(next()));
+    bench(`cron-schedule: validateVaried varied`, () => {
+      try {
+        parseCronExpression(next());
+      } catch {
+        /* invalid */
+      }
+    });
+    bench(`cron-parser: validateVaried varied`, () => {
+      try {
+        CronExpressionParser.parse(next());
+      } catch {
+        /* invalid */
+      }
+    });
+    bench(`croner: validateVaried varied`, () => {
+      try {
+        new Cron(next(), { paused: true });
+      } catch {
+        /* invalid */
+      }
+    });
+  });
+}
 
 // --- nextRun ---
 

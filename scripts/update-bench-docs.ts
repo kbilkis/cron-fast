@@ -4,7 +4,7 @@ import { join } from "node:path";
 // --- Types ---
 
 interface NormalizedResult {
-  category: "nextRun" | "nextRuns" | "previousRun" | "validation" | "parsing";
+  category: "nextRun" | "nextRuns" | "previousRun" | "validation" | "validateVaried" | "parsing";
   testCase: string;
   library: string;
   opsPerSecond: number;
@@ -37,6 +37,8 @@ function normalizeCategory(cat: string): Category {
     case "validation":
     case "validate":
       return "validation";
+    case "validateVaried":
+      return "validateVaried";
     case "parsing":
     case "parse":
       return "parsing";
@@ -106,7 +108,7 @@ function parseMitata(json: any): { results: NormalizedResult[]; runtimeVer: stri
     const library = alias.substring(0, colonIdx);
     const rest = alias.substring(colonIdx + 2);
 
-    const catMatch = rest.match(/^(nextRuns|nextRun|previousRun|validate|parse)\s+/);
+    const catMatch = rest.match(/^(nextRuns|nextRun|previousRun|validateVaried|validate|parse)\s+/);
     if (!catMatch) continue;
     const category = normalizeCategory(catMatch[1]);
     const testCase = rest.substring(catMatch[0].length);
@@ -193,6 +195,7 @@ function updateReadme(
     ["Next 100 runs", "nextRuns"],
     ["Previous run", "previousRun"],
     ["Validation", "validation"],
+    ["Validation (varied)", "validateVaried"],
     ["Parsing", "parsing"],
   ];
 
@@ -320,6 +323,9 @@ function updateBenchmarkDoc(
   const validationTestCases = [
     ...new Set(results.filter((r) => r.category === "validation").map((r) => r.testCase)),
   ];
+  const validateVariedTestCases = [
+    ...new Set(results.filter((r) => r.category === "validateVaried").map((r) => r.testCase)),
+  ];
 
   // Update version line
   const versionLine = `> Tested with ${runtime} v${runtimeVer}, cron-fast v${versions["cron-fast"]}, croner v${versions.croner}, cron-parser v${versions["cron-parser"]}, cron-schedule v${versions["cron-schedule"]}, cron-validate v${versions["cron-validate"]}`;
@@ -331,6 +337,7 @@ function updateBenchmarkDoc(
     ["Next 100 Runs Time", "nextRuns", allLibs],
     ["Previous Execution Time", "previousRun", allLibs],
     ["Validation", "validation", allLibsWithValidate],
+    ["Validation Varied Inputs", "validateVaried", allLibsWithValidate],
     ["Parsing", "parsing", allLibsWithValidate],
   ];
 
@@ -396,6 +403,16 @@ ${buildDetailedTable(results, "parsing", validationTestCases, [...VALIDATE_LIBS]
 ### Parsing - Latency (mean / p99)
 
 ${buildLatencyTable(results, "parsing", validationTestCases, [...VALIDATE_LIBS])}
+
+### Validation Varied Inputs - Throughput (ops/sec)
+
+${buildDetailedTable(results, "validateVaried", validateVariedTestCases, [...VALIDATE_LIBS])}
+
+✓ = cron-fast is faster (≥10% faster) | ✗ = cron-fast is slower (≥10% slower)
+
+### Validation Varied Inputs - Latency (mean / p99)
+
+${buildLatencyTable(results, "validateVaried", validateVariedTestCases, [...VALIDATE_LIBS])}
 `;
 
   if (doc.includes("## Detailed Per-Test Results")) {

@@ -4,9 +4,41 @@ import { CronExpressionParser } from "npm:cron-parser";
 import { parseCronExpression } from "npm:cron-schedule";
 import cronValidateModule from "npm:cron-validate";
 
-import { executionCases, validationCases, nextRunsCases } from "../cases.ts";
+import { executionCases, validationCases, nextRunsCases, validationVariedCases } from "../cases.ts";
 
 const cronValidate = (cronValidateModule as any).default || cronValidateModule;
+
+// --- Anti-cache validation: cycle unique expressions so memoization can't win ---
+const VARIED = validationVariedCases;
+const VARIED_N = VARIED.length;
+let variedI = 0;
+const variedNext = (): string => VARIED[variedI++ % VARIED_N];
+
+const validateVariedAdapters = {
+  "cron-fast": (cron: string) => isValid(cron),
+  croner: (cron: string) => {
+    try {
+      new Cron(cron, { paused: true });
+    } catch {
+      /* invalid */
+    }
+  },
+  "cron-parser": (cron: string) => {
+    try {
+      CronExpressionParser.parse(cron);
+    } catch {
+      /* invalid */
+    }
+  },
+  "cron-schedule": (cron: string) => {
+    try {
+      parseCronExpression(cron);
+    } catch {
+      /* invalid */
+    }
+  },
+  "cron-validate": (cron: string) => cronValidate(cron),
+};
 
 // --- Adapters ---
 
@@ -139,4 +171,16 @@ for (const cron of validationCases) {
       },
     );
   }
+}
+
+// --- Benchmarks: validateVaried (anti-cache) ---
+
+for (const [lib, fn] of Object.entries(validateVariedAdapters)) {
+  Deno.bench(
+    `validateVaried: varied (${lib})`,
+    { group: `validateVaried: varied`, baseline: lib === "cron-fast" },
+    () => {
+      fn(variedNext());
+    },
+  );
 }

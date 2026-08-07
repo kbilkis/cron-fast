@@ -11,7 +11,7 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: ["**/*.test.ts", "**/*.config.ts", "dist/**", "cli.ts"],
     },
-    bench: {
+    benchmark: {
       include: ["benchmark/vitest/**/*.bench.ts"],
     },
   },

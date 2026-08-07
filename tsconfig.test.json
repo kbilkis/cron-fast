@@ -5,6 +5,12 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src/**/*", "test/**/*"],
+  "include": [
+    "src/**/*",
+    "test/**/*",
+    "benchmark/vitest/**/*",
+    "benchmark/cases.ts",
+    "vitest.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

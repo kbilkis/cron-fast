@@ -19,3 +19,17 @@ export const nextRunsCases: ExecutionTestCase[] = [
   { cron: "* * * * *", from: new Date("2026-01-15T10:30:00Z") },
   { cron: "0 9 * * 1-5", from: new Date("2026-01-15T10:00:00Z") },
 ];
+
+// Unique expressions for the anti-cache validation bench: minute×hour×day.
+// Cycling through these defeats parse-by-string memoization.
+export const validationVariedCases: string[] = (() => {
+  const arr: string[] = [];
+  for (let d = 1; d <= 31; d++) {
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m++) {
+        arr.push(`${m} ${h} ${d} * *`);
+      }
+    }
+  }
+  return arr;
+})();
