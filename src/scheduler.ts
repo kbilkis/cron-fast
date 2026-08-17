@@ -1,34 +1,11 @@
 import type { ParsedCron, CronOptions } from "./types.js";
 import { parse } from "./parser.js";
-import {
-  matches,
-  findNext,
-  findPrevious,
-  getDaysInMonth,
-  isOrMode,
-  matchesDayOrWeekday,
-} from "./matcher.js";
+import { matches, findNext, findPrevious, getDaysInMonth } from "./matcher.js";
 import { convertToTimezone, convertFromTimezone } from "./timezone.js";
 
 const MAX_ITERATIONS = 1000;
 
 type Direction = "next" | "prev";
-
-/** Direction-specific operations for unified forward/backward traversal */
-const DIR = {
-  next: {
-    find: findNext,
-    minute: (p: ParsedCron) => p.minute[0],
-    hour: (p: ParsedCron) => p.hour[0],
-    offset: 1,
-  },
-  prev: {
-    find: findPrevious,
-    minute: (p: ParsedCron) => p.minute.at(-1)!,
-    hour: (p: ParsedCron) => p.hour.at(-1)!,
-    offset: -1,
-  },
-} as const;
 
 /** Get the next execution time for a cron expression. Throws if expression or timezone is invalid, or if no match is found within iteration limit. */
 export function nextRun(expression: string, options?: CronOptions): Date {
@@ -92,7 +69,7 @@ export function isMatch(
   return matches(parsed, checkDate);
 }
 
-/** Find matching time using smart field-increment algorithm */
+/** Find matching time using smart field-increment algorithm (integer-time loop) */
 function findMatch(
   parsed: ParsedCron,
   start: Date,
@@ -100,198 +77,208 @@ function findMatch(
   tz?: string,
   expression?: string,
 ): Date {
-  const current = new Date(start);
+  const next = dir === "next";
+  const st = {
+    year: start.getUTCFullYear(),
+    month: start.getUTCMonth(),
+    day: start.getUTCDate(),
+    hour: start.getUTCHours(),
+    minute: start.getUTCMinutes(),
+  };
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
-    if (matches(parsed, current)) {
-      return tz !== undefined ? convertFromTimezone(current, tz) : current;
+    if (intMatches(parsed, st)) {
+      if (i === 0) return tz !== undefined ? convertFromTimezone(start, tz) : start;
+      const d = new Date(Date.UTC(st.year, st.month, st.day, st.hour, st.minute, 0, 0));
+      return tz !== undefined ? convertFromTimezone(d, tz) : d;
     }
-    advanceDate(parsed, current, dir);
+    intAdvanceDate(parsed, st, next);
   }
   throw new Error(`No match found for "${expression}" within iteration limit`);
 }
 
-/**
- * Advance date to next/prev candidate time by mutating the date in place.
- *
- * Algorithm:
- * 1. Check fields from LARGEST (month) to SMALLEST (minute)
- * 2. When a field doesn't match, jump to the next valid value for that field
- * 3. Reset all smaller fields to their boundary (first value for 'next', last for 'prev')
- *
- * Example (direction='next', cron='0 9 * * *' meaning 9:00 AM daily):
- *   Current: March 15, 10:30 AM
- *   - Month (March)? ✓ matches
- *   - Day (15)? ✓ matches
- *   - Hour (10)? ✗ not in [9] → no next hour today → cascade to next day
- *   - Result: March 16, 9:00 AM
- *
- * @param parsed - The parsed cron expression
- * @param date - The date to mutate (modified in place)
- * @param dir - Direction to advance ('next' or 'prev')
- */
-function advanceDate(parsed: ParsedCron, date: Date, dir: Direction): void {
-  const d = DIR[dir];
-  const minute = date.getUTCMinutes();
-  const hour = date.getUTCHours();
-  const day = date.getUTCDate();
-  const month = date.getUTCMonth();
-  const year = date.getUTCFullYear();
-  const weekday = date.getUTCDay();
-  const daysInMonth = getDaysInMonth(year, month);
+/** Weekday (0=Sun..6=Sat) from civil date via Howard Hinnant's days_from_civil. */
+function weekdayOf(year: number, month: number, day: number): number {
+  const m = month + 1;
+  const y2 = year - (m <= 2 ? 1 : 0);
+  const era = Math.trunc((y2 >= 0 ? y2 : y2 - 399) / 400);
+  const yoe = y2 - era * 400;
+  const mp = m + (m > 2 ? -3 : 9);
+  const doy = Math.trunc((153 * mp + 2) / 5) + day - 1;
+  const doe = yoe * 365 + Math.trunc(yoe / 4) - Math.trunc(yoe / 100) + doy;
+  const days = era * 146097 + doe - 719468;
+  return ((days % 7) + 4 + 7) % 7;
+}
 
-  // Month mismatch (wildcard field skips the .includes scan)
-  if (!(parsed.monthIsWildcard || parsed.month.includes(month))) {
-    moveToMonth(parsed, date, dir, month, year);
-    return;
+/** Match check on integer fields; wildcard fields skip the .includes scan. */
+function intMatches(
+  parsed: ParsedCron,
+  st: { year: number; month: number; day: number; hour: number; minute: number },
+): boolean {
+  if (!(parsed.minuteIsWildcard || parsed.minute.includes(st.minute))) return false;
+  if (!(parsed.hourIsWildcard || parsed.hour.includes(st.hour))) return false;
+  if (!(parsed.monthIsWildcard || parsed.month.includes(st.month))) return false;
+  if (!parsed.dayIsWildcard && !parsed.weekdayIsWildcard) {
+    if (parsed.day.includes(st.day)) return true;
+    return parsed.weekday.includes(weekdayOf(st.year, st.month, st.day));
   }
+  if (!parsed.dayIsWildcard) return parsed.day.includes(st.day);
+  if (!parsed.weekdayIsWildcard)
+    return parsed.weekday.includes(weekdayOf(st.year, st.month, st.day));
+  return true;
+}
 
-  // Day/Weekday mismatch - use OR logic like matches()
-  if (!matchesDayOrWeekday(parsed, day, weekday, daysInMonth)) {
-    moveToDay(parsed, date, dir, day, month, year, daysInMonth);
-    return;
-  }
+/** Integer translation of the advance/moveToDay/moveToMonth/resetToMonthBoundary cascade. */
+function intAdvanceDate(
+  parsed: ParsedCron,
+  st: { year: number; month: number; day: number; hour: number; minute: number },
+  next: boolean,
+): void {
+  const off = next ? 1 : -1;
+  const bHour = next ? parsed.hour[0] : parsed.hour.at(-1)!;
+  const bMin = next ? parsed.minute[0] : parsed.minute.at(-1)!;
 
-  // Hour mismatch (wildcard field skips the .includes scan)
-  if (!(parsed.hourIsWildcard || parsed.hour.includes(hour))) {
-    const targetHour = d.find(parsed.hour, hour + d.offset);
-    if (targetHour !== null) {
-      // Found valid hour in same day → reset minute to boundary
-      date.setUTCHours(targetHour);
-      date.setUTCMinutes(d.minute(parsed));
+  // Month mismatch
+  if (!(parsed.monthIsWildcard || parsed.month.includes(st.month))) {
+    const targetMonth = next
+      ? findNext(parsed.month, st.month + off)
+      : findPrevious(parsed.month, st.month + off);
+    if (targetMonth !== null) {
+      intResetToMonthBoundary(parsed, st, st.year, targetMonth, next, bHour, bMin);
     } else {
-      // No valid hour left today → move to next/prev day
-      moveToDay(parsed, date, dir, day, month, year, daysInMonth);
+      const boundaryMonth = next ? parsed.month[0] : parsed.month.at(-1)!;
+      intResetToMonthBoundary(parsed, st, st.year + off, boundaryMonth, next, bHour, bMin);
     }
     return;
   }
 
-  // Minute mismatch (wildcard field skips the .includes scan)
-  if (!(parsed.minuteIsWildcard || parsed.minute.includes(minute))) {
-    const targetMinute = d.find(parsed.minute, minute + d.offset);
-    if (targetMinute !== null) {
-      // Found valid minute in same hour
-      date.setUTCMinutes(targetMinute);
+  const dim = getDaysInMonth(st.year, st.month);
+
+  // Day/Weekday mismatch (with daysInMonth bound)
+  const dayIn = parsed.day.includes(st.day) && st.day <= dim;
+  let dayOk: boolean;
+  if (!parsed.dayIsWildcard && !parsed.weekdayIsWildcard) {
+    const wd = weekdayOf(st.year, st.month, st.day);
+    dayOk = dayIn || parsed.weekday.includes(wd);
+  } else if (!parsed.dayIsWildcard) {
+    dayOk = dayIn;
+  } else if (!parsed.weekdayIsWildcard) {
+    const wd = weekdayOf(st.year, st.month, st.day);
+    dayOk = parsed.weekday.includes(wd);
+  } else {
+    dayOk = true;
+  }
+  if (!dayOk) {
+    intMoveToDay(parsed, st, next, dim, bHour, bMin);
+    return;
+  }
+
+  // Hour mismatch
+  if (!(parsed.hourIsWildcard || parsed.hour.includes(st.hour))) {
+    const targetHour = next
+      ? findNext(parsed.hour, st.hour + off)
+      : findPrevious(parsed.hour, st.hour + off);
+    if (targetHour !== null) {
+      st.hour = targetHour;
+      st.minute = bMin;
     } else {
-      // No valid minute left → try next hour
-      const targetHour = d.find(parsed.hour, hour + d.offset);
+      intMoveToDay(parsed, st, next, dim, bHour, bMin);
+    }
+    return;
+  }
+
+  // Minute mismatch
+  if (!(parsed.minuteIsWildcard || parsed.minute.includes(st.minute))) {
+    const targetMinute = next
+      ? findNext(parsed.minute, st.minute + off)
+      : findPrevious(parsed.minute, st.minute + off);
+    if (targetMinute !== null) {
+      st.minute = targetMinute;
+    } else {
+      const targetHour = next
+        ? findNext(parsed.hour, st.hour + off)
+        : findPrevious(parsed.hour, st.hour + off);
       if (targetHour !== null) {
-        date.setUTCHours(targetHour);
-        date.setUTCMinutes(d.minute(parsed));
+        st.hour = targetHour;
+        st.minute = bMin;
       } else {
-        // No valid hour left → move to next/prev day
-        moveToDay(parsed, date, dir, day, month, year, daysInMonth);
+        intMoveToDay(parsed, st, next, dim, bHour, bMin);
       }
     }
     return;
   }
 
-  // All fields match but we still need to advance (called from findMatch loop)
-  // This happens when matches() returns false due to day/weekday mismatch
-  // Move to next/prev day
-  moveToDay(parsed, date, dir, day, month, year, daysInMonth);
+  intMoveToDay(parsed, st, next, dim, bHour, bMin);
 }
 
-function moveToMonth(
+function intMoveToDay(
   parsed: ParsedCron,
-  date: Date,
-  dir: Direction,
-  currentMonth: number,
-  currentYear: number,
-): void {
-  const d = DIR[dir];
-  const targetMonth = d.find(parsed.month, currentMonth + d.offset);
-
-  if (targetMonth !== null) {
-    resetToMonthBoundary(parsed, date, currentYear, targetMonth, dir);
-  } else {
-    const boundaryMonth = dir === "next" ? parsed.month[0] : parsed.month.at(-1)!;
-    resetToMonthBoundary(parsed, date, currentYear + d.offset, boundaryMonth, dir);
-  }
-}
-
-/**
- * Find the next candidate day to check
- * In OR mode: advance by 1 day (must check every day)
- * Normal mode: jump to next valid day-of-month
- */
-function findCandidateDay(
-  parsed: ParsedCron,
-  currentDay: number,
-  dir: Direction,
+  st: { year: number; month: number; day: number; hour: number; minute: number },
+  next: boolean,
   daysInMonth: number,
-): number | null {
-  const d = DIR[dir];
-  const inOrMode = isOrMode(parsed);
-
+  bHour: number,
+  bMin: number,
+): void {
+  const off = next ? 1 : -1;
+  const inOrMode = !parsed.dayIsWildcard && !parsed.weekdayIsWildcard;
+  let targetDay: number | null;
   if (inOrMode) {
-    // In OR mode, we must check every day (can't skip ahead)
-    // because any day might match via weekday even if day-of-month doesn't match
-    const targetDay = currentDay + d.offset;
-    if (dir === "next" && targetDay > daysInMonth) return null;
-    if (dir === "prev" && targetDay < 1) return null;
-    return targetDay;
-  }
-
-  // Normal mode: jump to next valid day-of-month
-  return d.find(parsed.day, currentDay + d.offset);
-}
-
-function moveToDay(
-  parsed: ParsedCron,
-  date: Date,
-  dir: Direction,
-  currentDay: number,
-  currentMonth: number,
-  currentYear: number,
-  daysInMonth: number,
-): void {
-  const d = DIR[dir];
-  const targetDay = findCandidateDay(parsed, currentDay, dir, daysInMonth);
-  const dayIsValid =
-    dir === "next" ? targetDay !== null && targetDay <= daysInMonth : targetDay !== null;
-
-  if (dayIsValid) {
-    date.setUTCDate(targetDay!);
-    date.setUTCHours(d.hour(parsed));
-    date.setUTCMinutes(d.minute(parsed));
+    const t = st.day + off;
+    if (next && t > daysInMonth) targetDay = null;
+    else if (!next && t < 1) targetDay = null;
+    else targetDay = t;
   } else {
-    moveToMonth(parsed, date, dir, currentMonth, currentYear);
+    targetDay = next ? findNext(parsed.day, st.day + off) : findPrevious(parsed.day, st.day + off);
+  }
+  const dayIsValid = next ? targetDay !== null && targetDay <= daysInMonth : targetDay !== null;
+  if (dayIsValid) {
+    st.day = targetDay!;
+    st.hour = bHour;
+    st.minute = bMin;
+  } else {
+    const targetMonth = next
+      ? findNext(parsed.month, st.month + off)
+      : findPrevious(parsed.month, st.month + off);
+    if (targetMonth !== null) {
+      intResetToMonthBoundary(parsed, st, st.year, targetMonth, next, bHour, bMin);
+    } else {
+      const boundaryMonth = next ? parsed.month[0] : parsed.month.at(-1)!;
+      intResetToMonthBoundary(parsed, st, st.year + off, boundaryMonth, next, bHour, bMin);
+    }
   }
 }
 
-function resetToMonthBoundary(
+function intResetToMonthBoundary(
   parsed: ParsedCron,
-  date: Date,
+  st: { year: number; month: number; day: number; hour: number; minute: number },
   year: number,
   month: number,
-  dir: Direction,
+  next: boolean,
+  bHour: number,
+  bMin: number,
 ): void {
-  const d = DIR[dir];
-  date.setUTCFullYear(year);
-  date.setUTCDate(1);
-  date.setUTCMonth(month);
-
-  const daysInMonth = getDaysInMonth(year, month);
-
-  // Check if we're in OR mode (both day and weekday restricted)
-  const inOrMode = isOrMode(parsed);
-
-  if (dir === "next") {
-    // In OR mode: start from day 1. Normal mode: jump to first valid day
+  st.year = year;
+  st.month = month;
+  const dim = getDaysInMonth(year, month);
+  const inOrMode = !parsed.dayIsWildcard && !parsed.weekdayIsWildcard;
+  if (next) {
     const startDay = inOrMode ? 1 : (findNext(parsed.day, 1) ?? parsed.day[0]);
-    date.setUTCDate(Math.min(startDay, daysInMonth));
+    st.day = Math.min(startDay, dim);
   } else {
-    // In OR mode: start from last day. Normal mode: jump to last valid day
-    const startDay = inOrMode ? daysInMonth : findPrevious(parsed.day, daysInMonth);
+    const startDay = inOrMode ? dim : findPrevious(parsed.day, dim);
     if (startDay === null) {
-      // No valid day in this month, move to previous month
-      moveToMonth(parsed, date, dir, month, year);
+      const off = -1;
+      const targetMonth = findPrevious(parsed.month, month + off);
+      if (targetMonth !== null) {
+        intResetToMonthBoundary(parsed, st, year, targetMonth, next, bHour, bMin);
+      } else {
+        const boundaryMonth = parsed.month.at(-1)!;
+        intResetToMonthBoundary(parsed, st, year + off, boundaryMonth, next, bHour, bMin);
+      }
       return;
     }
-    date.setUTCDate(startDay);
+    st.day = startDay;
   }
-
-  date.setUTCHours(d.hour(parsed));
-  date.setUTCMinutes(d.minute(parsed));
+  st.hour = bHour;
+  st.minute = bMin;
 }
