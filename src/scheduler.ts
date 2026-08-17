@@ -11,7 +11,6 @@ import {
 import { convertToTimezone, convertFromTimezone } from "./timezone.js";
 
 const MAX_ITERATIONS = 1000;
-const ONE_MINUTE_MS = 60_000;
 
 type Direction = "next" | "prev";
 
@@ -75,7 +74,7 @@ export function nextRuns(expression: string, count: number, options?: CronOption
     start.setUTCMinutes(start.getUTCMinutes() + 1);
     const next = findMatch(parsed, start, "next", tz, expression);
     results.push(next);
-    current = new Date(next.getTime() + ONE_MINUTE_MS);
+    current = next;
   }
   return results;
 }

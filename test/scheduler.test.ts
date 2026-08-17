@@ -152,6 +152,17 @@ describe("scheduler", () => {
         const runs = nextRuns("* * * * *", 0);
         expect(runs).toHaveLength(0);
       });
+      it("should not skip matches for every-minute expressions", () => {
+        const from = new Date("2026-03-15T14:11:30Z");
+        const runs = nextRuns("* * * * *", 4, { from });
+
+        expect(runs.map((d) => d.toISOString())).toEqual([
+          "2026-03-15T14:12:00.000Z",
+          "2026-03-15T14:13:00.000Z",
+          "2026-03-15T14:14:00.000Z",
+          "2026-03-15T14:15:00.000Z",
+        ]);
+      });
     });
 
     describe("isMatch", () => {
