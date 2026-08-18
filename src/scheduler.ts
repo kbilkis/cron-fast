@@ -205,10 +205,7 @@ function intAdvanceDate(
         intMoveToDay(parsed, st, next, dim, bHour, bMin);
       }
     }
-    return;
   }
-
-  intMoveToDay(parsed, st, next, dim, bHour, bMin);
 }
 
 function intMoveToDay(

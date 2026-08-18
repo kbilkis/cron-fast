@@ -540,6 +540,22 @@ describe("scheduler", () => {
 
         expect(prev.toISOString()).toBe("2028-03-01T00:00:00.000Z");
       });
+
+      it("should skip months without day 31 when walking backwards across years", () => {
+        // April has 30 days, so "31" never matches in April; previous match is May 31 of the prior year
+        const from = new Date("2026-04-10T12:00:00Z");
+        const prev = previousRun("0 0 31 4,5 *", { from });
+
+        expect(prev.toISOString()).toBe("2025-05-31T00:00:00.000Z");
+      });
+
+      it("should skip impossible day in earlier listed month when walking backwards", () => {
+        // From May 30, the April candidate is rejected (no April 31) and May of prior year is used
+        const from = new Date("2026-05-31T00:00:30Z");
+        const prev = previousRun("0 0 31 4,5 *", { from });
+
+        expect(prev.toISOString()).toBe("2025-05-31T00:00:00.000Z");
+      });
     });
 
     describe("isMatch with specific months", () => {
