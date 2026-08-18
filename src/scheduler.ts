@@ -7,18 +7,37 @@ const MAX_ITERATIONS = 1000;
 
 type Direction = "next" | "prev";
 
-/** Get the next execution time for a cron expression. Throws if expression or timezone is invalid, or if no match is found within iteration limit. */
-export function nextRun(expression: string, options?: CronOptions): Date {
-  const parsed = parse(expression);
+/** Local-wall minus UTC offset in minutes at `instant` for `tz`. */
+function tzOffsetMinutes(instant: Date, tz: string): number {
+  return (convertToTimezone(instant, tz).getTime() - instant.getTime()) / 60000;
+}
 
-  const from = options?.from || new Date();
-  const tz = options?.timezone;
-
+/** Next match strictly after `from`, with DST fall-back ambiguity re-resolve. */
+function nextFrom(parsed: ParsedCron, from: Date, tz?: string, expression?: string): Date {
   const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
   start.setUTCSeconds(0, 0);
   start.setUTCMinutes(start.getUTCMinutes() + 1);
 
-  return findMatch(parsed, start, "next", tz, expression);
+  const result = findMatch(parsed, start, "next", tz, expression);
+
+  // DST fall-back: the matched wall minute may occur twice; if the conversion picked
+  // the earlier pass (<= from), jump by the actual transition size (offset delta).
+  if (tz !== undefined && result.getTime() <= from.getTime()) {
+    const shift =
+      tzOffsetMinutes(result, tz) - tzOffsetMinutes(new Date(result.getTime() + 24 * 3600000), tz);
+    const candidate = new Date(result.getTime() + shift * 60000);
+    if (candidate.getTime() > from.getTime() && matches(parsed, convertToTimezone(candidate, tz))) {
+      return candidate;
+    }
+  }
+
+  return result;
+}
+
+/** Get the next execution time for a cron expression. Throws if expression or timezone is invalid, or if no match is found within iteration limit. */
+export function nextRun(expression: string, options?: CronOptions): Date {
+  const parsed = parse(expression);
+  return nextFrom(parsed, options?.from || new Date(), options?.timezone, expression);
 }
 
 /** Get the previous execution time for a cron expression. Throws if expression or timezone is invalid, or if no match is found within iteration limit. */
@@ -30,7 +49,10 @@ export function previousRun(expression: string, options?: CronOptions): Date {
 
   const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
   start.setUTCSeconds(0, 0);
-  start.setUTCMinutes(start.getUTCMinutes() - 1);
+  // The current minute counts as "previous" unless `from` is exactly on its boundary.
+  if (from.getUTCSeconds() === 0 && from.getUTCMilliseconds() === 0) {
+    start.setUTCMinutes(start.getUTCMinutes() - 1);
+  }
 
   return findMatch(parsed, start, "prev", tz, expression);
 }
@@ -46,10 +68,7 @@ export function nextRuns(expression: string, count: number, options?: CronOption
   let current = options?.from || new Date();
 
   for (let i = 0; i < count; i++) {
-    const start = tz !== undefined ? convertToTimezone(current, tz) : new Date(current);
-    start.setUTCSeconds(0, 0);
-    start.setUTCMinutes(start.getUTCMinutes() + 1);
-    const next = findMatch(parsed, start, "next", tz, expression);
+    const next = nextFrom(parsed, current, tz, expression);
     results.push(next);
     current = next;
   }

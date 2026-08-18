@@ -185,6 +185,19 @@ describe("scheduler", () => {
         expect(runs).toHaveLength(0);
       });
 
+      it("should agree with chained nextRun calls", () => {
+        const from = new Date("2026-03-15T10:00:00Z");
+        const chained: Date[] = [];
+        let current = from;
+        for (let i = 0; i < 5; i++) {
+          current = nextRun("* * * * *", { from: current });
+          chained.push(current);
+          current = new Date(current.getTime() + 1);
+        }
+        const batch = nextRuns("* * * * *", 5, { from });
+        expect(batch.map((d) => d.getTime())).toEqual(chained.map((d) => d.getTime()));
+      });
+
       it("should return consecutive runs in the given timezone", () => {
         // 08:00 Tokyo on June 15 = 2026-06-14T23:00Z; next 9 AM Tokyo runs
         const runs = nextRuns("0 9 * * *", 2, {
@@ -625,11 +638,12 @@ describe("scheduler", () => {
       });
 
       it("should skip impossible day in earlier listed month when walking backwards", () => {
-        // From May 30, the April candidate is rejected (no April 31) and May of prior year is used
+        // From May 31 00:00:30, the May 31 00:00 run is already in the past and
+        // must be returned (the April candidate would be invalid anyway)
         const from = new Date("2026-05-31T00:00:30Z");
         const prev = previousRun("0 0 31 4,5 *", { from });
 
-        expect(prev.toISOString()).toBe("2025-05-31T00:00:00.000Z");
+        expect(prev.toISOString()).toBe("2026-05-31T00:00:00.000Z");
       });
     });
 
@@ -708,21 +722,20 @@ describe("scheduler", () => {
     });
 
     describe("previousRun with seconds in current minute", () => {
-      it("should NOT return the current minute when called mid-minute", () => {
-        // At 9:01:30, previousRun should return 9:00, not 9:01
-        // because we subtract 1 minute after zeroing seconds
+      it("should return the already-started minute when called mid-minute", () => {
+        // At 9:01:30, the 9:01 run already started (9:01:00 < 9:01:30),
+        // so previousRun should return 9:01, not 9:00
         const from = new Date("2025-03-15T09:01:30Z");
         const prev = previousRun("* * * * *", { from });
 
         expect(prev.getUTCHours()).toBe(9);
-        expect(prev.getUTCMinutes()).toBe(0); // 9:00, not 9:01
+        expect(prev.getUTCMinutes()).toBe(1);
         expect(prev.getUTCSeconds()).toBe(0);
         expect(prev.getTime()).toBeLessThan(from.getTime());
       });
 
-      it("should return previous minute even at 9:01:00 exactly (start of minute)", () => {
-        // At 9:01:00, after zeroing seconds it's still 9:01:00
-        // Then subtracting 1 minute gives 9:00:00
+      it("should return previous minute when at exact minute boundary (9:01:00)", () => {
+        // At exactly 9:01:00, the run itself is at `from`, so the previous run is 9:00
         const from = new Date("2025-03-15T09:01:00Z");
         const prev = previousRun("* * * * *", { from });
 
@@ -731,14 +744,29 @@ describe("scheduler", () => {
         expect(prev.getUTCSeconds()).toBe(0);
       });
 
-      it("should return current minute when called at minute boundary (9:01:00.001)", () => {
-        // At 9:00:00.001, after zeroing seconds it's 9:00:00
-        // Then subtracting 1 minute gives 8:59:00
+      it("should return current minute when called just after minute boundary (9:00:00.001)", () => {
+        // 1 ms into the minute: the 9:00 run is in the past
         const from = new Date("2025-03-15T09:00:00.001Z");
         const prev = previousRun("* * * * *", { from });
 
-        expect(prev.getUTCHours()).toBe(8);
-        expect(prev.getUTCMinutes()).toBe(59);
+        expect(prev.getUTCHours()).toBe(9);
+        expect(prev.getUTCMinutes()).toBe(0);
+        expect(prev.getUTCSeconds()).toBe(0);
+      });
+
+      it("should not skip to the previous hour when called mid-minute (sparse schedule)", () => {
+        // The 9:00 run started 30s before `from` and must be returned
+        const from = new Date("2026-03-15T09:00:30Z");
+        const prev = previousRun("0 * * * *", { from });
+
+        expect(prev.toISOString()).toBe("2026-03-15T09:00:00.000Z");
+      });
+
+      it("should not skip an entire year when called one second before the run", () => {
+        const from = new Date("2026-12-31T23:59:59Z");
+        const prev = previousRun("59 23 31 12 *", { from });
+
+        expect(prev.toISOString()).toBe("2026-12-31T23:59:00.000Z");
       });
     });
 
@@ -997,6 +1025,66 @@ describe("scheduler", () => {
 
         expect(next).toBeInstanceOf(Date);
         expect(next.getTime()).toBeGreaterThan(from.getTime());
+      });
+
+      it("should not return a time in the past during fall-back ambiguity", () => {
+        // from = 2026-11-01T06:00:00Z = 1:00 AM EST (second pass of the repeated hour).
+        // 1:30 AM occurs at both 05:30Z (EDT) and 06:30Z (EST); only 06:30Z is after `from`.
+        const from = new Date("2026-11-01T06:00:00Z");
+        const next = nextRun("30 1 * * *", {
+          from,
+          timezone: "America/New_York",
+        });
+
+        expect(next.toISOString()).toBe("2026-11-01T06:30:00.000Z");
+      });
+
+      it("should not return a time in the past during fall-back ambiguity for stepped minutes", () => {
+        // from = 2026-11-01T06:00:00Z = 1:00 AM EST; next */7 wall minute is 1:07 AM,
+        // which occurs at 05:07Z (EDT, before `from`) and 06:07Z (EST, after)
+        const from = new Date("2026-11-01T06:00:00Z");
+        const next = nextRun("*/7 * * * *", {
+          from,
+          timezone: "America/New_York",
+        });
+
+        expect(next.toISOString()).toBe("2026-11-01T06:07:00.000Z");
+      });
+
+      it("should return strictly increasing runs across fall-back ambiguity in nextRuns", () => {
+        // from = 2026-11-01T06:00:00Z = 1:00 AM EST; wall minutes 1:01-1:59 also
+        // existed an hour earlier (EDT). Every emitted run must be after `from`
+        // and after the previous run.
+        const from = new Date("2026-11-01T06:00:00Z");
+        const runs = nextRuns("* * * * *", 3, { from, timezone: "America/New_York" });
+
+        expect(runs.map((r) => r.toISOString())).toEqual([
+          "2026-11-01T06:01:00.000Z",
+          "2026-11-01T06:02:00.000Z",
+          "2026-11-01T06:03:00.000Z",
+        ]);
+      });
+
+      it("should resolve 30-minute fall-back duplicates (Lord Howe)", () => {
+        // 2026-04-05 02:00 -> 01:30 (+11:00 -> +10:30). Wall 01:45 occurs at
+        // 14:45Z (before `from`) and 15:15Z (after). The later duplicate must win.
+        const next = nextRun("45 1 * * *", {
+          from: new Date("2026-04-04T14:50:00Z"),
+          timezone: "Australia/Lord_Howe",
+        });
+
+        expect(next.toISOString()).toBe("2026-04-05T15:15:00.000Z");
+      });
+
+      it("should resolve fall-back duplicates on a 45-minute-offset zone (Chatham)", () => {
+        // 2026-04-05 03:45 -> 02:45 (+13:45 -> +12:45). Wall 03:30 occurs at
+        // 13:45Z and 14:45Z; from is between them, so the later duplicate must win.
+        const next = nextRun("30 3 * * *", {
+          from: new Date("2026-04-04T14:20:00Z"),
+          timezone: "Pacific/Chatham",
+        });
+
+        expect(next.toISOString()).toBe("2026-04-04T14:45:00.000Z");
       });
 
       it("should handle UTC timezone correctly", () => {
@@ -1356,6 +1444,15 @@ describe("scheduler", () => {
         expect(prev.getUTCMonth()).toBe(0);
         expect(prev.getUTCDate()).toBe(31);
         expect(prev.getUTCHours()).toBe(9);
+      });
+
+      it("should cross a whole year backwards when day never fits the listed month (non-leap)", () => {
+        // Feb 29 doesn't fit 2026 or 2025 (non-leap); previous match from
+        // March 2026 is Feb 29, 2024
+        const from = new Date("2026-03-01T00:01:00Z");
+        const prev = previousRun("0 0 29 2 *", { from });
+
+        expect(prev.toISOString()).toBe("2024-02-29T00:00:00.000Z");
       });
 
       it("should handle April 31 case when going backwards", () => {

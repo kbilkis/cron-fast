@@ -235,8 +235,10 @@ function parseFieldAt(
         end = read();
         if (end < 0) return null;
         if (start > end) return null;
+        if (start < min || end > max) return null;
       } else {
         end = start;
+        if (start < min || start > max) return null;
       }
     }
 
@@ -253,12 +255,8 @@ function parseFieldAt(
     }
 
     if (hasStep || isStar2 || isRange) {
-      for (let v = start; v <= end; v += step) {
-        if (v >= min && v <= max) values.push(v);
-      }
+      for (let v = start; v <= end; v += step) values.push(v);
     } else {
-      // pure single value: validate strictly (matches original behavior)
-      if (start < min || start > max) return null;
       values.push(start);
     }
 
@@ -270,7 +268,6 @@ function parseFieldAt(
     }
   }
 
-  if (values.length === 0) return null;
   return values.sort((a, b) => a - b).filter((v, idx, arr) => idx === 0 || arr[idx - 1] !== v);
 }
 

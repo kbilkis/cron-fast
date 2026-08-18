@@ -38,16 +38,16 @@ Fast and tiny JavaScript/TypeScript cron parser with timezone support. Works eve
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v3.6.0, croner v10.0.1, cron-parser v5.10.0, cron-schedule v6.0.0 on Node.js v24.19.0
+> Tested with cron-fast v3.7.0, croner v10.0.1, cron-parser v5.10.0, cron-schedule v6.0.0 on Node.js v24.19.0
 
 | Operation           | cron-fast       | cron-schedule | cron-parser | croner    |
 | ------------------- | --------------- | ------------- | ----------- | --------- |
-| Next run            | **2017k ops/s** | 337k ops/s    | 35k ops/s   | 31k ops/s |
-| Next 100 runs       | **37k ops/s**   | 15k ops/s     | 1k ops/s    | 2k ops/s  |
-| Previous run        | **2137k ops/s** | 357k ops/s    | 39k ops/s   | 32k ops/s |
-| Validation          | **4962k ops/s** | 460k ops/s    | 96k ops/s   | 35k ops/s |
-| Validation (varied) | **4463k ops/s** | 475k ops/s    | 114k ops/s  | 35k ops/s |
-| Parsing             | **4950k ops/s** | 459k ops/s    | 90k ops/s   | 35k ops/s |
+| Next run            | **1976k ops/s** | 330k ops/s    | 35k ops/s   | 31k ops/s |
+| Next 100 runs       | **42k ops/s**   | 15k ops/s     | 1k ops/s    | 2k ops/s  |
+| Previous run        | **2139k ops/s** | 349k ops/s    | 40k ops/s   | 31k ops/s |
+| Validation          | **4873k ops/s** | 450k ops/s    | 94k ops/s   | 34k ops/s |
+| Validation (varied) | **4317k ops/s** | 424k ops/s    | 103k ops/s  | 33k ops/s |
+| Parsing             | **5008k ops/s** | 454k ops/s    | 94k ops/s   | 34k ops/s |
 
 See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
@@ -217,20 +217,20 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.6.0):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.7.0):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 24.91 KB | 11.66 KB | **4.07 KB** |
-| `nextRun only                                        ` | 15.06 KB | 6.99 KB  | **2.56 KB** |
-| `previousRun only                                    ` | 15.07 KB | 6.99 KB  | **2.57 KB** |
-| `nextRuns only                                       ` | 15.24 KB | 7.06 KB  | **2.59 KB** |
-| `isValid only                                        ` | 5.64 KB  | 2.79 KB  | **1.20 KB** |
-| `parse only                                          ` | 5.53 KB  | 2.74 KB  | **1.18 KB** |
-| `describe only                                       ` | 12.75 KB | 6.13 KB  | **2.35 KB** |
-| `isMatch only                                        ` | 7.29 KB  | 3.60 KB  | **1.52 KB** |
-| `Validation only (isValid + parse)                   ` | 5.65 KB  | 2.79 KB  | **1.20 KB** |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 16.02 KB | 7.41 KB  | **2.65 KB** |
+| `Full bundle (all exports)                           ` | 25.15 KB | 11.75 KB | **4.15 KB** |
+| `nextRun only                                        ` | 16.34 KB | 7.61 KB  | **2.72 KB** |
+| `previousRun only                                    ` | 14.92 KB | 6.92 KB  | **2.53 KB** |
+| `nextRuns only                                       ` | 16.54 KB | 7.68 KB  | **2.75 KB** |
+| `isValid only                                        ` | 5.61 KB  | 2.77 KB  | **1.19 KB** |
+| `parse only                                          ` | 5.50 KB  | 2.72 KB  | **1.17 KB** |
+| `describe only                                       ` | 12.72 KB | 6.11 KB  | **2.34 KB** |
+| `isMatch only                                        ` | 7.23 KB  | 3.57 KB  | **1.50 KB** |
+| `Validation only (isValid + parse)                   ` | 5.62 KB  | 2.77 KB  | **1.19 KB** |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 17.20 KB | 7.98 KB  | **2.84 KB** |
 
 Import only what you need:
 

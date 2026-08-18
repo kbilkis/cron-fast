@@ -606,6 +606,35 @@ describe("parser", () => {
       it("should return null for very large numeric value (overflow)", () => {
         expect(() => parse("99999999999999999999 * * * *")).toThrow();
       });
+
+      it("should throw for range end out of field bounds (0-70 hours)", () => {
+        expect(() => parse("0 0-70 * * *")).toThrow();
+      });
+
+      it("should throw for stepped range end out of field bounds (0-70/10 hours)", () => {
+        expect(() => parse("0 0-70/10 * * *")).toThrow();
+      });
+
+      it("should reject out-of-range range bounds consistently with single values", () => {
+        // Single 70 and fully out-of-range 60-80 are rejected; partially valid
+        // 0-70 must be too, not silently clamped to 0-23.
+        expect(isValid("0 70 * * *")).toBe(false);
+        expect(isValid("0 60-80 * * *")).toBe(false);
+        expect(isValid("0 0-70 * * *")).toBe(false);
+      });
+
+      it("should reject out-of-range stepped single value (70/10)", () => {
+        expect(() => parse("0 70/10 * * * *")).toThrow();
+      });
+
+      it("should reject out-of-range stepped single inside a list (70/10,5)", () => {
+        // The 70/10 segment must not be silently dropped because 5 is valid
+        expect(() => parse("0 70/10,5 * * *")).toThrow();
+      });
+
+      it("should keep in-bounds stepped single values valid (10/15)", () => {
+        expect(parse("* 10/15,5 * * *").hour).toEqual([5, 10]);
+      });
     });
 
     describe("error cases - invalid value names", () => {
