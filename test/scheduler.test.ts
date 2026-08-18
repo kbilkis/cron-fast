@@ -1,6 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { nextRun, previousRun, nextRuns, isMatch } from "../src/scheduler.js";
 import { getDaysInMonth } from "../src/matcher.js";
+
+// Passthrough spy: delegates to the real implementation unless a test overrides it,
+// so the rest of this file runs against effectively unmocked behavior.
+vi.mock("../src/matcher.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/matcher.js")>();
+  return { ...actual, getDaysInMonth: vi.fn(actual.getDaysInMonth) };
+});
 
 describe("scheduler", () => {
   describe("Invalid cron expression handling", () => {
@@ -51,6 +58,21 @@ describe("scheduler", () => {
       it("should throw for empty string", () => {
         const date = new Date("2026-03-15T09:00:00Z");
         expect(() => isMatch("", date)).toThrow('Invalid cron expression: ""');
+      });
+    });
+
+    describe("iteration limit guard", () => {
+      it("should throw when no match is found within the iteration limit", () => {
+        // Force the search to never find a matching day: every month appears to have 0 days,
+        // so the loop walks year by year without ever matching and exhausts MAX_ITERATIONS.
+        vi.mocked(getDaysInMonth).mockReturnValue(0);
+        try {
+          expect(() => nextRun("0 0 1 1 *", { from: new Date("2026-06-15T12:30:00Z") })).toThrow(
+            'No match found for "0 0 1 1 *" within iteration limit',
+          );
+        } finally {
+          vi.mocked(getDaysInMonth).mockRestore();
+        }
       });
     });
   });
@@ -135,6 +157,16 @@ describe("scheduler", () => {
         expect(prev.getUTCDate()).toBe(14);
         expect(prev.getUTCHours()).toBe(9);
       });
+
+      it("should default to current time when no from option is given", () => {
+        const before = Date.now();
+        const prev = previousRun("* * * * *");
+        const after = Date.now();
+
+        // every-minute expression: previous run falls within the two minutes before "now"
+        expect(prev.getTime()).toBeLessThanOrEqual(after);
+        expect(prev.getTime()).toBeGreaterThanOrEqual(before - 120_000);
+      });
     });
 
     describe("nextRuns", () => {
@@ -152,6 +184,20 @@ describe("scheduler", () => {
         const runs = nextRuns("* * * * *", 0);
         expect(runs).toHaveLength(0);
       });
+
+      it("should return consecutive runs in the given timezone", () => {
+        // 08:00 Tokyo on June 15 = 2026-06-14T23:00Z; next 9 AM Tokyo runs
+        const runs = nextRuns("0 9 * * *", 2, {
+          from: new Date("2026-06-14T23:00:00Z"),
+          timezone: "Asia/Tokyo",
+        });
+
+        expect(runs.map((d) => d.toISOString())).toEqual([
+          "2026-06-15T00:00:00.000Z",
+          "2026-06-16T00:00:00.000Z",
+        ]);
+      });
+
       it("should not skip matches for every-minute expressions", () => {
         const from = new Date("2026-03-15T14:11:30Z");
         const runs = nextRuns("* * * * *", 4, { from });
@@ -165,7 +211,36 @@ describe("scheduler", () => {
       });
     });
 
+    describe("dates before year 1", () => {
+      it("should handle negative years (proleptic Gregorian) in weekday calculation", () => {
+        const from = new Date(Date.UTC(-5, 5, 15, 10, 30));
+        const next = nextRun("0 0 * * 0", { from });
+
+        // reference: step minute-by-minute with the engine's own calendar
+        const ref = new Date(from.getTime() + 60_000);
+        while (!(ref.getUTCDay() === 0 && ref.getUTCHours() === 0 && ref.getUTCMinutes() === 0)) {
+          ref.setUTCMinutes(ref.getUTCMinutes() + 1);
+        }
+
+        expect(next.toISOString()).toBe(ref.toISOString());
+      });
+    });
+
     describe("isMatch", () => {
+      it("should find next run with wildcard minute and restricted hour", () => {
+        const from = new Date("2026-03-15T14:30:00Z");
+        const next = nextRun("* 9 * * *", { from });
+
+        expect(next.toISOString()).toBe("2026-03-16T09:00:00.000Z");
+      });
+
+      it("should find next run with wildcard minute and restricted month", () => {
+        const from = new Date("2026-01-15T10:05:00Z");
+        const next = nextRun("* 10 * 2 *", { from });
+
+        expect(next.toISOString()).toBe("2026-02-01T10:00:00.000Z");
+      });
+
       it("should match exact time", () => {
         const date = new Date("2026-03-16T09:00:00Z");
         expect(isMatch("0 9 * * *", date)).toBe(true);

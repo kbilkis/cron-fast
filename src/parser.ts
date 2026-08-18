@@ -172,6 +172,8 @@ function isStar(s: string, lo: number, hi: number): boolean {
  * Parse a single cron field over substring s[lo..hi) (char-level, no split/substring allocs).
  * Semantics mirror the original: star, a, a-b, a-b/N, star/N, a/N, comma lists.
  */
+// All parseFieldAt call sites pre-check isStar and use the shared WC_* constants,
+// so every field reaching here contains at least one non-'*' character.
 function parseFieldAt(
   s: string,
   lo: number,
@@ -180,12 +182,6 @@ function parseFieldAt(
   max: number,
   names?: Record<string, number>,
 ): number[] | null {
-  if (isStar(s, lo, hi)) {
-    const values: number[] = [];
-    for (let i = min; i <= max; i++) values.push(i);
-    return values;
-  }
-
   const values: number[] = [];
   let i = lo;
 

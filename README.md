@@ -221,16 +221,16 @@ cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 25.19 KB | 11.78 KB | **4.12 KB** |
-| `nextRun only                                        ` | 15.28 KB | 7.09 KB  | **2.59 KB** |
-| `previousRun only                                    ` | 15.28 KB | 7.09 KB  | **2.60 KB** |
-| `nextRuns only                                       ` | 15.51 KB | 7.18 KB  | **2.64 KB** |
-| `isValid only                                        ` | 5.77 KB  | 2.85 KB  | **1.22 KB** |
-| `parse only                                          ` | 5.66 KB  | 2.80 KB  | **1.20 KB** |
-| `describe only                                       ` | 12.88 KB | 6.19 KB  | **2.38 KB** |
-| `isMatch only                                        ` | 7.42 KB  | 3.66 KB  | **1.55 KB** |
-| `Validation only (isValid + parse)                   ` | 5.78 KB  | 2.85 KB  | **1.22 KB** |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 16.29 KB | 7.53 KB  | **2.70 KB** |
+| `Full bundle (all exports)                           ` | 24.91 KB | 11.66 KB | **4.07 KB** |
+| `nextRun only                                        ` | 15.06 KB | 6.99 KB  | **2.56 KB** |
+| `previousRun only                                    ` | 15.07 KB | 6.99 KB  | **2.57 KB** |
+| `nextRuns only                                       ` | 15.24 KB | 7.06 KB  | **2.59 KB** |
+| `isValid only                                        ` | 5.64 KB  | 2.79 KB  | **1.20 KB** |
+| `parse only                                          ` | 5.53 KB  | 2.74 KB  | **1.18 KB** |
+| `describe only                                       ` | 12.75 KB | 6.13 KB  | **2.35 KB** |
+| `isMatch only                                        ` | 7.29 KB  | 3.60 KB  | **1.52 KB** |
+| `Validation only (isValid + parse)                   ` | 5.65 KB  | 2.79 KB  | **1.20 KB** |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 16.02 KB | 7.41 KB  | **2.65 KB** |
 
 Import only what you need:
 

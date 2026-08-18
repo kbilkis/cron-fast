@@ -16,9 +16,7 @@ export function convertToTimezone(date: Date, timezone: string): Date {
   // Parse formatted string: "MM/DD/YYYY, HH:mm:ss"
   const [datePart, timePart] = str.split(", ");
   const [month, day, year] = datePart.split("/").map(Number);
-  let [hour, minute, second] = timePart.split(":").map(Number);
-
-  if (hour === 24) hour = 0; // Normalize "24:00:00" to "00:00:00"
+  const [hour, minute, second] = timePart.split(":").map(Number);
 
   return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
 }
@@ -63,9 +61,7 @@ export function convertFromTimezone(date: Date, timezone: string): Date {
     // Parse what wall-clock time this guess produces
     const [testDatePart, testTimePart] = testStr.split(", ");
     const [testMonth, testDay, testYear] = testDatePart.split("/").map(Number);
-    let [testHour, testMinute, testSecond] = testTimePart.split(":").map(Number);
-
-    if (testHour === 24) testHour = 0; // Normalize "24:00:00" to "00:00:00"
+    const [testHour, testMinute, testSecond] = testTimePart.split(":").map(Number);
 
     const gotTime = Date.UTC(testYear, testMonth - 1, testDay, testHour, testMinute, testSecond);
 
@@ -104,9 +100,7 @@ export function convertFromTimezone(date: Date, timezone: string): Date {
 
     const [testDatePart, testTimePart] = testStr.split(", ");
     const [testMonth, testDay, testYear] = testDatePart.split("/").map(Number);
-    let [testHour, testMinute, testSecond] = testTimePart.split(":").map(Number);
-
-    if (testHour === 24) testHour = 0; // Normalize "24:00:00" to "00:00:00"
+    const [testHour, testMinute, testSecond] = testTimePart.split(":").map(Number);
 
     const gotTime = Date.UTC(testYear, testMonth - 1, testDay, testHour, testMinute, testSecond);
 

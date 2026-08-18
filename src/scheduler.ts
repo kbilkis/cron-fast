@@ -187,23 +187,23 @@ function intAdvanceDate(
     return;
   }
 
-  // Minute mismatch
-  if (!(parsed.minuteIsWildcard || parsed.minute.includes(st.minute))) {
-    const targetMinute = next
-      ? findNext(parsed.minute, st.minute + off)
-      : findPrevious(parsed.minute, st.minute + off);
-    if (targetMinute !== null) {
-      st.minute = targetMinute;
+  // Minute mismatch. Reaching here means month/day/hour all matched, so intMatches
+  // returned false solely because the minute differs — the minute can never already
+  // match here (that would imply intMatches was true and this function never ran).
+  const targetMinute = next
+    ? findNext(parsed.minute, st.minute + off)
+    : findPrevious(parsed.minute, st.minute + off);
+  if (targetMinute !== null) {
+    st.minute = targetMinute;
+  } else {
+    const targetHour = next
+      ? findNext(parsed.hour, st.hour + off)
+      : findPrevious(parsed.hour, st.hour + off);
+    if (targetHour !== null) {
+      st.hour = targetHour;
+      st.minute = bMin;
     } else {
-      const targetHour = next
-        ? findNext(parsed.hour, st.hour + off)
-        : findPrevious(parsed.hour, st.hour + off);
-      if (targetHour !== null) {
-        st.hour = targetHour;
-        st.minute = bMin;
-      } else {
-        intMoveToDay(parsed, st, next, dim, bHour, bMin);
-      }
+      intMoveToDay(parsed, st, next, dim, bHour, bMin);
     }
   }
 }
@@ -259,7 +259,7 @@ function intResetToMonthBoundary(
   const dim = getDaysInMonth(year, month);
   const inOrMode = !parsed.dayIsWildcard && !parsed.weekdayIsWildcard;
   if (next) {
-    const startDay = inOrMode ? 1 : (findNext(parsed.day, 1) ?? parsed.day[0]);
+    const startDay = inOrMode ? 1 : parsed.day[0];
     st.day = Math.min(startDay, dim);
   } else {
     const startDay = inOrMode ? dim : findPrevious(parsed.day, dim);
