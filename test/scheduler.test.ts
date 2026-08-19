@@ -1513,6 +1513,15 @@ describe("scheduler", () => {
         expect(next.getUTCDay()).toBe(1); // Monday
       });
 
+      it("should schedule impossible day/month with restricted weekday via OR", () => {
+        // "0 0 31 2 1": Feb 31 never exists, so this fires on Mondays in February.
+        // First Monday in Feb 2026 is Feb 2nd.
+        const from = new Date("2026-01-01T00:00:00Z");
+        const next = nextRun("0 0 31 2 1", { from });
+        expect(next.toISOString()).toBe("2026-02-02T00:00:00.000Z");
+        expect(next.getUTCDay()).toBe(1); // Monday
+      });
+
       it("should handle OR logic in prev direction (day 29 OR Monday)", () => {
         const from = new Date("2028-03-01T00:00:00Z");
         // "0 0 29 2 1" means: midnight on (Feb 29 OR Monday in Feb)

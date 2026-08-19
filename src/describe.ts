@@ -72,8 +72,17 @@ export function describe(expression: string): string {
   }
 
   // Day and Weekday (handle OR logic)
-  const dayPart = describeDay(parsed.day, parsed.dayIsWildcard);
-  const weekdayPart = describeWeekday(parsed.weekday, parsed.weekdayIsWildcard);
+  // When both fields are restricted they OR together (Vixie cron semantics).
+  // If exactly one side's set covers its full range, the union is every day
+  // (e.g. day 1 OR Sun-Sat). If both sides are full ranges the union is
+  // identical to a wildcard pair, so both parts are suppressed ("1-31 ... 0-6"
+  // describes the same as "* ... *").
+  const orMode = !parsed.dayIsWildcard && !parsed.weekdayIsWildcard;
+  const dayFull = parsed.day.length === 31;
+  const weekdayFull = parsed.weekday.length === 7;
+  const everyDay = orMode && (dayFull || weekdayFull) && !(dayFull && weekdayFull);
+  const dayPart = everyDay ? "every day" : describeDay(parsed.day, parsed.dayIsWildcard);
+  const weekdayPart = everyDay ? "" : describeWeekday(parsed.weekday, parsed.weekdayIsWildcard);
   const monthPart = parsed.month.length < 12 ? describeMonth(parsed.month) : null;
 
   // Combine day/weekday/month - no comma between day and month for better flow

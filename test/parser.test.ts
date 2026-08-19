@@ -794,6 +794,17 @@ describe("parser", () => {
       it("should return null with month name for invalid day", () => {
         expect(() => parse("0 0 31 apr *")).toThrow();
       });
+
+      it("should allow impossible day/month when weekday is restricted (OR semantics)", () => {
+        // Feb 31 never exists, but Mondays in February still match
+        expect(() => parse("0 0 31 2 1")).not.toThrow();
+        expect(() => parse("0 0 30 2 0")).not.toThrow();
+        expect(() => parse("0 0 31 4,6,9,11 1")).not.toThrow();
+      });
+
+      it("should still reject impossible day/month when weekday is wildcard", () => {
+        expect(() => parse("0 0 31 2 *")).toThrow();
+      });
     });
   });
 

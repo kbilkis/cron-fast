@@ -146,9 +146,12 @@ function normalizeWeekday(weekdayRaw: number[]): number[] {
 /**
  * Check if day/month combinations are possible.
  * Returns false for expressions like "0 0 31 2 *" (Feb 31).
+ * Skipped when the weekday field is restricted: day/weekday use OR semantics,
+ * so a restricted weekday (e.g. Mondays) can still match even when the
+ * day/month combo never occurs (e.g. "0 0 31 2 1" fires on Mondays in Feb).
  */
 function hasValidDayMonthCombinations(parsed: ParsedCron): boolean {
-  if (parsed.dayIsWildcard || parsed.month.length === 12) return true;
+  if (parsed.dayIsWildcard || parsed.month.length === 12 || !parsed.weekdayIsWildcard) return true;
 
   // Days in each month (0-indexed: 0=Jan, 11=Dec)
   // February can have 29 days in leap years

@@ -54,6 +54,17 @@ describe("describe", () => {
     expect(describeCron("0 0 15 * 5")).toBe("At 12:00 AM, on the 15th or on Fridays");
   });
 
+  it("should describe OR logic with full-range day/weekday sets as every day", () => {
+    // Full weekday set (0-6) is restricted, not a wildcard: day 1 OR Sun-Sat = every day
+    expect(describeCron("0 0 1 * 0-6")).toBe("At 12:00 AM, every day");
+    // Full day set (1-31) is restricted: all days OR Mondays = every day
+    expect(describeCron("0 0 1-31 * 1")).toBe("At 12:00 AM, every day");
+    // Month still applies
+    expect(describeCron("0 0 31 2 0-6")).toBe("At 12:00 AM, every day in February");
+    // Both sides full ranges: union identical to wildcards, parts suppressed
+    expect(describeCron("0 0 1-31 * 0-6")).toBe("At 12:00 AM");
+  });
+
   it("should describe the complex example", () => {
     expect(describeCron("*/15 3,4 1-4 */3 6")).toBe(
       "Every 15 minutes, at 3 AM or 4 AM, on the 1st through 4th or on Saturdays every 3 months",
