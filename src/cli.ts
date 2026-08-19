@@ -38,67 +38,60 @@ Examples:
 `);
 }
 
+function parseArgError(flag: string, value: string): never {
+  console.error(`Error: Invalid value for ${flag}: ${value}`);
+  process.exit(1);
+}
+
 function parseArgs(argv: string[]): CliOptions {
   const args = argv.slice(2);
   if (args.length === 0 || args.includes("--help")) {
     return { expression: "", help: true, describe: false, validate: false, json: false };
   }
 
-  // First positional argument is the cron expression
-  let expression = "";
-  const remainingArgs: string[] = [];
-
-  for (const arg of args) {
-    if (!arg.startsWith("-") && !expression) {
-      expression = arg;
-    } else {
-      remainingArgs.push(arg);
-    }
-  }
-
   const options: CliOptions = {
-    expression,
+    expression: "",
     describe: false,
     validate: false,
     json: false,
     help: false,
   };
 
-  for (let i = 0; i < remainingArgs.length; i++) {
-    const arg = remainingArgs[i];
-    const next = remainingArgs[i + 1];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (!arg.startsWith("-")) {
+      if (!options.expression) options.expression = arg;
+      continue;
+    }
 
     switch (arg) {
       case "--next":
-        if (next !== undefined) {
-          options.next = parseInt(next, 10);
-          i++;
-        }
+      case "--prev": {
+        const value = args[++i];
+        if (value === undefined) break;
+        const n = parseInt(value, 10);
+        if (!Number.isFinite(n) || n < 0) parseArgError(arg, value);
+        if (arg === "--next") options.next = n;
+        else options.prev = n;
         break;
-      case "--prev":
-        if (next !== undefined) {
-          options.prev = parseInt(next, 10);
-          i++;
-        }
+      }
+      case "--tz": {
+        const value = args[++i];
+        if (value === undefined) break;
+        options.timezone = value;
         break;
-      case "--tz":
-        if (next !== undefined) {
-          options.timezone = next;
-          i++;
-        }
-        break;
+      }
       case "--from":
-        if (next !== undefined) {
-          options.from = new Date(next);
-          i++;
-        }
+      case "--match": {
+        const value = args[++i];
+        if (value === undefined) break;
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) parseArgError(arg, value);
+        if (arg === "--from") options.from = d;
+        else options.match = d;
         break;
-      case "--match":
-        if (next !== undefined) {
-          options.match = new Date(next);
-          i++;
-        }
-        break;
+      }
       case "--describe":
         options.describe = true;
         break;

@@ -114,4 +114,60 @@ describe("cli", () => {
     const json = JSON.parse(result.stdout);
     expect(json.error).toBeDefined();
   });
+
+  it("should error cleanly for unparseable --from date", () => {
+    const result = run('"0 9 * * *" --from not-a-date');
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toMatch(/--from/i);
+    expect(result.stderr).toMatch(/date/i);
+    expect(result.stderr).not.toContain("RangeError");
+  });
+
+  it("should error for unparseable --match date instead of printing false", () => {
+    const result = run('"0 9 * * *" --match not-a-date');
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).not.toBe("false");
+    expect(result.stderr).toMatch(/--match/i);
+  });
+
+  it("should error for unparseable --match date in json mode without RangeError", () => {
+    const result = run('"0 9 * * *" --match not-a-date --json');
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr + result.stdout).not.toContain("RangeError");
+  });
+
+  it("should error for non-numeric --next count", () => {
+    const result = run('"0 9 * * *" --next abc');
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toMatch(/--next/i);
+  });
+
+  it("should error for non-numeric --prev count", () => {
+    const result = run('"0 9 * * *" --prev abc');
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toMatch(/--prev/i);
+  });
+
+  it("should error for negative --next count", () => {
+    const result = run('"0 9 * * *" --next -1');
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("should accept valued flags before the expression", () => {
+    const result = run('--tz America/New_York "0 9 * * 1-5" --next 2');
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Next");
+  });
+
+  it("should accept --next and its value before the expression", () => {
+    const result = run('--next 2 "0 9 * * 1-5"');
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Next");
+  });
+
+  it("should accept --from before the expression", () => {
+    const result = run('--from 2026-03-15T10:00:00Z "0 9 * * *" --next 1');
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("2026-03-16");
+  });
 });
