@@ -383,9 +383,9 @@ describe("parser", () => {
         expect(result.weekday).toEqual([1, 3, 5]);
       });
 
-      it("should normalize range ending at 7 (Sunday) to include 0", () => {
+      it("should normalize range ending at 7 (Sunday) to include 0, sorted", () => {
         const result = parse("0 0 * * 1-7");
-        expect(result.weekday).toEqual([1, 2, 3, 4, 5, 6, 0]);
+        expect(result.weekday).toEqual([0, 1, 2, 3, 4, 5, 6]);
       });
 
       it("should drop 7 from full range when 0 is already present (0-7)", () => {
@@ -403,15 +403,15 @@ describe("parser", () => {
         expect(result.weekday).toEqual([0, 1, 2, 3, 4, 5, 6]);
       });
 
-      it("should normalize Saturday+Sunday pair (6,7) to [6,0]", () => {
+      it("should normalize Saturday+Sunday pair (6,7) to [0,6]", () => {
         const result = parse("0 0 * * 6,7");
-        expect(result.weekday).toEqual([6, 0]);
+        expect(result.weekday).toEqual([0, 6]);
       });
 
       it("should apply step to single weekday name and normalize trailing 7", () => {
-        // mon/2 expands to mon,wed,fri,sun(=7), then 7 normalizes to 0
+        // mon/2 expands to mon,wed,fri,sun(=7), then 7 normalizes to 0, sorted
         const result = parse("0 0 * * mon/2");
-        expect(result.weekday).toEqual([1, 3, 5, 0]);
+        expect(result.weekday).toEqual([0, 1, 3, 5]);
       });
 
       it("should parse cross-type range (weekday name to number)", () => {
@@ -419,9 +419,40 @@ describe("parser", () => {
         expect(result.weekday).toEqual([1, 2, 3, 4, 5]);
       });
 
+      it("should accept weekday name range ending in SUN (MON-SUN)", () => {
+        // 'sun' as a range end denotes 7 so the range stays ascending,
+        // then normalizes to 0 (cron-schedule / croner semantics).
+        const result = parse("0 0 * * MON-SUN");
+        expect(result.weekday).toEqual([0, 1, 2, 3, 4, 5, 6]);
+      });
+
+      it("should accept lowercase weekday name range ending in sun (sat-sun)", () => {
+        const result = parse("0 0 * * sat-sun");
+        expect(result.weekday).toEqual([0, 6]);
+      });
+
+      it("should keep SUN as 0 at range start unless end is also SUN", () => {
+        // SUN-MON -> 0-1 (start relaxes); sun-sun -> [0] (7-7 degenerate)
+        expect(parse("0 0 * * SUN-MON").weekday).toEqual([0, 1]);
+        expect(parse("0 0 * * sun-sun").weekday).toEqual([0]);
+        expect(parse("0 0 * * sun-sat").weekday).toEqual([0, 1, 2, 3, 4, 5, 6]);
+      });
+
+      it("should still reject reversed numeric and non-Sunday name ranges", () => {
+        expect(() => parse("* * * * 6-0")).toThrow();
+        expect(() => parse("* * * * 7-1")).toThrow();
+        expect(() => parse("* * * * FRI-TUE")).toThrow();
+        expect(() => parse("* * * * tue-mon")).toThrow();
+      });
+
+      it("should support stepping over a SUN-ended name range", () => {
+        const result = parse("0 0 * * mon-sun/2");
+        expect(result.weekday).toEqual([0, 1, 3, 5]);
+      });
+
       it("should normalize numeric 7 mixed with weekday name in comma list", () => {
         const result = parse("0 0 * * mon,7");
-        expect(result.weekday).toEqual([1, 0]);
+        expect(result.weekday).toEqual([0, 1]);
       });
 
       it("should deduplicate name and number resolving to same weekday", () => {
@@ -431,7 +462,7 @@ describe("parser", () => {
 
       it("should normalize 7 from a second range in comma list (1-5,6-7)", () => {
         const result = parse("0 0 * * 1-5,6-7");
-        expect(result.weekday).toEqual([1, 2, 3, 4, 5, 6, 0]);
+        expect(result.weekday).toEqual([0, 1, 2, 3, 4, 5, 6]);
       });
 
       it("should collapse range-to-7 plus explicit 0 (1-7,0)", () => {

@@ -44,6 +44,10 @@ function isWs(c: number): boolean {
   return c === 32 || (c >= 9 && c <= 13);
 }
 
+function isNameChar(c: number): boolean {
+  return (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+}
+
 function rangeArray(lo: number, hi: number): number[] {
   const a: number[] = [];
   for (let i = lo; i <= hi; i++) a.push(i);
@@ -135,7 +139,7 @@ function normalizeWeekday(weekdayRaw: number[]): number[] {
   const weekdays: number[] = [];
   for (const d of weekdayRaw) {
     if (d === 7) {
-      if (!hasZero) weekdays.push(0);
+      if (!hasZero) weekdays.unshift(0);
     } else {
       weekdays.push(d);
     }
@@ -229,14 +233,20 @@ function parseFieldAt(
       end = max;
       i++;
     } else {
+      const tokStartStart = i;
       start = read();
       if (start < 0) return null;
       if (i < hi && s.charCodeAt(i) === 45) {
         // '-'
         isRange = true;
         i++;
+        const tokEnd = i;
         end = read();
         if (end < 0) return null;
+        if (max === 7) {
+          if (end === 0 && isNameChar(s.charCodeAt(tokEnd))) end = 7;
+          if (start === 0 && isNameChar(s.charCodeAt(tokStartStart))) start = end === 7 ? 7 : 0;
+        }
         if (start > end) return null;
         if (start < min || end > max) return null;
       } else {
