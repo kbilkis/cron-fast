@@ -1027,6 +1027,105 @@ describe("scheduler", () => {
         expect(next.getTime()).toBeGreaterThan(from.getTime());
       });
 
+      it("should fire the FIRST pass of a repeated hour (Europe/London)", () => {
+        // 2025-10-26 London: 01:30 occurs twice — 00:30Z (BST) and 01:30Z (GMT).
+        const next = nextRun("30 1 * * *", {
+          from: new Date("2025-10-26T00:00:00Z"),
+          timezone: "Europe/London",
+        });
+        expect(next.toISOString()).toBe("2025-10-26T00:30:00.000Z");
+      });
+
+      it("should fire the FIRST pass of a repeated hour (Europe/Athens)", () => {
+        // 2016-10-30 Athens: wall 03:00 occurs twice — 00:00Z (EEST) and
+        // 01:00Z (EET). Hourly schedule must emit 00:00Z first.
+        const next = nextRun("0 3 * * *", {
+          from: new Date("2016-10-29T23:00:01Z"),
+          timezone: "Europe/Athens",
+        });
+        expect(next.toISOString()).toBe("2016-10-30T00:00:00.000Z");
+      });
+
+      it("previousRun should also resolve a repeated hour to the FIRST pass", () => {
+        // From wall 02:00 London on the fall-back day, the previous 01:30 is
+        // the first pass (00:30Z BST), not the second (01:30Z GMT).
+        const prev = previousRun("30 1 * * *", {
+          from: new Date("2025-10-26T02:00:00Z"),
+          timezone: "Europe/London",
+        });
+        expect(prev.toISOString()).toBe("2025-10-26T00:30:00.000Z");
+      });
+
+      it("should keep west-of-UTC fall-back behavior unchanged (America/New_York)", () => {
+        // 2025-11-02 NY: 01:30 occurs at 05:30Z (EDT) and 06:30Z (EST); first pass.
+        const next = nextRun("30 1 * * *", {
+          from: new Date("2025-11-02T04:00:00Z"),
+          timezone: "America/New_York",
+        });
+        expect(next.toISOString()).toBe("2025-11-02T05:30:00.000Z");
+      });
+
+      it("should fire each repeated wall hour once, at the first pass (Europe/London hourly)", () => {
+        // 2025-10-26 London: wall 01:00 occurs at 00:00Z (BST) and 01:00Z (GMT).
+        // The hourly schedule fires the first pass, skips the second, then
+        // resumes: 02:00 GMT wall = 02:00Z.
+        const from = new Date("2025-10-25T23:00:01Z");
+        const runs = nextRuns("0 * * * *", 3, { from, timezone: "Europe/London" });
+        expect(runs.map((r) => r.toISOString())).toEqual([
+          "2025-10-26T00:00:00.000Z",
+          "2025-10-26T02:00:00.000Z",
+          "2025-10-26T03:00:00.000Z",
+        ]);
+      });
+
+      it("should fire each repeated wall hour once, at the first pass (Europe/Athens hourly)", () => {
+        // 2016-10-30 Athens: wall 03:00 occurs at 00:00Z (EEST) and 01:00Z (EET).
+        const from = new Date("2016-10-29T23:00:01Z");
+        const runs = nextRuns("0 * * * *", 3, { from, timezone: "Europe/Athens" });
+        expect(runs.map((r) => r.toISOString())).toEqual([
+          "2016-10-30T00:00:00.000Z",
+          "2016-10-30T02:00:00.000Z",
+          "2016-10-30T03:00:00.000Z",
+        ]);
+      });
+
+      it("should fire every stepped minute inside a repeated hour at its first pass", () => {
+        // 2016-10-30 Athens: wall 03:00/03:20/03:40 each occur twice (EEST pass
+        // at 00:xxZ, EET pass at 01:xxZ). No run may be dropped and no wall
+        // minute may fire twice.
+        const from = new Date("2016-10-29T23:00:01Z");
+        const runs = nextRuns("*/20 3 * * *", 4, { from, timezone: "Europe/Athens" });
+        expect(runs.map((r) => r.toISOString())).toEqual([
+          "2016-10-30T00:00:00.000Z",
+          "2016-10-30T00:20:00.000Z",
+          "2016-10-30T00:40:00.000Z",
+          "2016-10-31T01:00:00.000Z",
+        ]);
+      });
+
+      it("should return strictly increasing runs across east-of-UTC fall-back (London)", () => {
+        // from = 00:00Z London on the fall-back day (wall 01:00 BST, first
+        // pass). Wall minutes 01:01-01:59 all repeat an hour later; every
+        // emitted run must be after `from` and strictly increasing.
+        const from = new Date("2025-10-26T00:00:00Z");
+        const runs = nextRuns("* * * * *", 3, { from, timezone: "Europe/London" });
+        expect(runs.map((r) => r.toISOString())).toEqual([
+          "2025-10-26T00:01:00.000Z",
+          "2025-10-26T00:02:00.000Z",
+          "2025-10-26T00:03:00.000Z",
+        ]);
+      });
+
+      it("should treat UTC, Etc/UTC, GMT and Etc/GMT identically in scheduling", () => {
+        // Zero-offset zones take an identity fast path; results must match
+        // the no-timezone (UTC wall clock) call exactly.
+        const from = new Date("2026-03-15T05:30:00Z");
+        const expected = nextRun("0 9 * * 1-5", { from }).toISOString();
+        for (const tz of ["UTC", "Etc/UTC", "GMT", "Etc/GMT"]) {
+          expect(nextRun("0 9 * * 1-5", { from, timezone: tz }).toISOString()).toBe(expected);
+        }
+      });
+
       it("should not return a time in the past during fall-back ambiguity", () => {
         // from = 2026-11-01T06:00:00Z = 1:00 AM EST (second pass of the repeated hour).
         // 1:30 AM occurs at both 05:30Z (EDT) and 06:30Z (EST); only 06:30Z is after `from`.

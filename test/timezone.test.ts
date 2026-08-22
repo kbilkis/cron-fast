@@ -511,6 +511,68 @@ describe("Timezone Edge Cases - Deep Dive", () => {
     });
 
     describe("edge case timezones", () => {
+      it("should treat zero-offset aliases as identity (UTC family)", () => {
+        // UTC / Etc/UTC / GMT / Etc/GMT are all UTC+0: conversions must be
+        // identity, identical across spellings, and must not throw.
+        const date = new Date("2026-03-15T12:34:56Z");
+        for (const tz of ["UTC", "Etc/UTC", "GMT", "Etc/GMT"]) {
+          expect(convertToTimezone(date, tz).getTime()).toBe(date.getTime());
+          expect(convertFromTimezone(date, tz).getTime()).toBe(date.getTime());
+        }
+      });
+
+      it("should NOT fast-path non-zero Etc/GMT offsets (POSIX sign inversion)", () => {
+        // Etc/GMT+5 is UTC-5 (sign inverted), not zero offset.
+        const date = new Date("2026-03-15T12:00:00Z");
+        expect(convertToTimezone(date, "Etc/GMT+5").toISOString()).toBe("2026-03-15T07:00:00.000Z");
+        expect(
+          convertFromTimezone(convertToTimezone(date, "Etc/GMT+5"), "Etc/GMT+5").getTime(),
+        ).toBe(date.getTime());
+      });
+
+      it("should still throw for offset-style strings Intl rejects (UTC+0)", () => {
+        const date = new Date("2026-03-15T12:00:00Z");
+        expect(() => convertToTimezone(date, "UTC+0")).toThrow();
+        expect(() => convertFromTimezone(date, "UTC+0")).toThrow();
+      });
+    });
+
+    describe("DST fall-back ambiguity (repeated wall hour)", () => {
+      it("should resolve a repeated London wall time to the FIRST pass", () => {
+        // 2025-10-26 London: wall 01:30 exists twice — 00:30Z (BST) and
+        // 01:30Z (GMT). The first pass must win for east-of-UTC zones too.
+        const wall = new Date(Date.UTC(2025, 9, 26, 1, 30, 0));
+        expect(convertFromTimezone(wall, "Europe/London").toISOString()).toBe(
+          "2025-10-26T00:30:00.000Z",
+        );
+      });
+
+      it("should resolve a repeated Athens wall time to the FIRST pass", () => {
+        // 2016-10-30 Athens: wall 03:00 exists twice — 00:00Z (EEST+3) and
+        // 01:00Z (EET+2).
+        const wall = new Date(Date.UTC(2016, 9, 30, 3, 0, 0));
+        expect(convertFromTimezone(wall, "Europe/Athens").toISOString()).toBe(
+          "2016-10-30T00:00:00.000Z",
+        );
+      });
+
+      it("should resolve a repeated New York wall time to the FIRST pass", () => {
+        // 2025-11-02 NY: wall 01:30 exists at 05:30Z (EDT) and 06:30Z (EST).
+        const wall = new Date(Date.UTC(2025, 10, 2, 1, 30, 0));
+        expect(convertFromTimezone(wall, "America/New_York").toISOString()).toBe(
+          "2025-11-02T05:30:00.000Z",
+        );
+      });
+
+      it("should keep non-ambiguous times unchanged", () => {
+        const wall = new Date(Date.UTC(2026, 6, 15, 9, 0, 0));
+        expect(convertFromTimezone(wall, "Europe/London").toISOString()).toBe(
+          "2026-07-15T08:00:00.000Z",
+        );
+      });
+    });
+
+    describe("Intl-routed zero-offset aliases (no fast path)", () => {
       it("should accept UTC timezone", () => {
         const date = new Date("2026-03-15T12:00:00Z");
         const converted = convertToTimezone(date, "UTC");

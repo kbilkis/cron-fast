@@ -1,7 +1,11 @@
+const IS_ZERO_OFFSET = (tz: string) =>
+  tz === "UTC" || tz === "Etc/UTC" || tz === "GMT" || tz === "Etc/GMT";
+
 /**
  * Convert a UTC date to wall-clock time in the target timezone.
  */
 export function convertToTimezone(date: Date, timezone: string): Date {
+  if (IS_ZERO_OFFSET(timezone)) return new Date(date.getTime());
   const str = date.toLocaleString("en-US", {
     timeZone: timezone,
     year: "numeric",
@@ -38,9 +42,13 @@ export function convertFromTimezone(date: Date, timezone: string): Date {
     date.getUTCMinutes(),
     date.getUTCSeconds(),
   );
+  if (IS_ZERO_OFFSET(timezone)) return new Date(targetTime);
 
-  // Start with a guess: interpret the wall-clock time as UTC
-  let guess = targetTime;
+  // Start with a guess below the wall-clock time: real fall-back overlaps are
+  // at most 2h wide, so targetTime - 3h always sits before the ambiguous
+  // window and the refinement converges forward onto the FIRST pass of a
+  // repeated wall time instead of the second.
+  let guess = targetTime - 10800000;
   let bestGuess = guess;
   let bestDiff = Infinity;
 
