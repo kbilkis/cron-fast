@@ -38,16 +38,16 @@ Fast and tiny JavaScript/TypeScript cron parser with timezone support. Works eve
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v3.8.0, croner v10.0.1, cron-parser v5.10.0, cron-schedule v6.0.0 on Node.js v24.19.0
+> Tested with cron-fast v3.9.0, croner v10.0.1, cron-parser v5.10.0, cron-schedule v6.0.0 on Node.js v24.19.0
 
 | Operation           | cron-fast       | cron-schedule | cron-parser | croner    |
 | ------------------- | --------------- | ------------- | ----------- | --------- |
-| Next run            | **2034k ops/s** | 334k ops/s    | 35k ops/s   | 31k ops/s |
+| Next run            | **2137k ops/s** | 329k ops/s    | 34k ops/s   | 30k ops/s |
 | Next 100 runs       | **43k ops/s**   | 15k ops/s     | 1k ops/s    | 2k ops/s  |
-| Previous run        | **2086k ops/s** | 351k ops/s    | 39k ops/s   | 32k ops/s |
-| Validation          | **5059k ops/s** | 458k ops/s    | 95k ops/s   | 35k ops/s |
-| Validation (varied) | **4331k ops/s** | 477k ops/s    | 116k ops/s  | 35k ops/s |
-| Parsing             | **5000k ops/s** | 462k ops/s    | 97k ops/s   | 35k ops/s |
+| Previous run        | **2249k ops/s** | 350k ops/s    | 39k ops/s   | 30k ops/s |
+| Validation          | **5965k ops/s** | 445k ops/s    | 88k ops/s   | 33k ops/s |
+| Validation (varied) | **5952k ops/s** | 473k ops/s    | 118k ops/s  | 35k ops/s |
+| Parsing             | **6117k ops/s** | 448k ops/s    | 94k ops/s   | 34k ops/s |
 
 See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
@@ -217,20 +217,20 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.8.0):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.9.0):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |
-| `Full bundle (all exports)                           ` | 25.46 KB | 11.89 KB | **4.20 KB** |
-| `nextRun only                                        ` | 16.37 KB | 7.63 KB  | **2.73 KB** |
-| `previousRun only                                    ` | 14.95 KB | 6.94 KB  | **2.54 KB** |
-| `nextRuns only                                       ` | 16.57 KB | 7.70 KB  | **2.76 KB** |
-| `isValid only                                        ` | 5.64 KB  | 2.79 KB  | **1.20 KB** |
-| `parse only                                          ` | 5.53 KB  | 2.74 KB  | **1.17 KB** |
-| `describe only                                       ` | 13.03 KB | 6.25 KB  | **2.39 KB** |
-| `isMatch only                                        ` | 7.26 KB  | 3.59 KB  | **1.51 KB** |
-| `Validation only (isValid + parse)                   ` | 5.65 KB  | 2.79 KB  | **1.20 KB** |
-| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 17.23 KB | 8.00 KB  | **2.84 KB** |
+| `Full bundle (all exports)                           ` | 26.42 KB | 12.34 KB | **4.37 KB** |
+| `nextRun only                                        ` | 17.32 KB | 8.07 KB  | **2.91 KB** |
+| `previousRun only                                    ` | 15.90 KB | 7.38 KB  | **2.72 KB** |
+| `nextRuns only                                       ` | 17.53 KB | 8.15 KB  | **2.94 KB** |
+| `isValid only                                        ` | 6.37 KB  | 3.10 KB  | **1.32 KB** |
+| `parse only                                          ` | 6.26 KB  | 3.05 KB  | **1.30 KB** |
+| `describe only                                       ` | 13.76 KB | 6.56 KB  | **2.52 KB** |
+| `isMatch only                                        ` | 8.15 KB  | 4.00 KB  | **1.69 KB** |
+| `Validation only (isValid + parse)                   ` | 6.38 KB  | 3.10 KB  | **1.32 KB** |
+| `Scheduling only (nextRun + previousRun + nextRuns)  ` | 18.19 KB | 8.45 KB  | **3.02 KB** |
 
 Import only what you need:
 

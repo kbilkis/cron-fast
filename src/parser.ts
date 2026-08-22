@@ -189,6 +189,24 @@ function parseFieldAt(
   max: number,
   names?: Record<string, number>,
 ): number[] | null {
+  const len = hi - lo;
+  if (len <= 2) {
+    const d0 = s.charCodeAt(lo) - 48;
+    if (d0 >= 0 && d0 <= 9) {
+      let v = d0;
+      let plain = true;
+      if (len === 2) {
+        const d1 = s.charCodeAt(lo + 1) - 48;
+        if (d1 >= 0 && d1 <= 9) v = v * 10 + d1;
+        else plain = false;
+      }
+      if (plain) {
+        if (v < min || v > max) return null;
+        return [v];
+      }
+    }
+  }
+
   const values: number[] = [];
   let i = lo;
 
