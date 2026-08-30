@@ -2,12 +2,12 @@ const IS_ZERO_OFFSET = (tz: string) =>
   tz === "UTC" || tz === "Etc/UTC" || tz === "GMT" || tz === "Etc/GMT";
 
 /**
- * Convert a UTC date to wall-clock time in the target timezone.
+ * Wall-clock time of `date` in `tz` as a UTC timestamp (ms).
+ * Some environments render midnight as hour 24 (h24 cycle), so fold it back to 0.
  */
-export function convertToTimezone(date: Date, timezone: string): Date {
-  if (IS_ZERO_OFFSET(timezone)) return new Date(date.getTime());
+function wallClockMs(date: Date, tz: string): number {
   const str = date.toLocaleString("en-US", {
-    timeZone: timezone,
+    timeZone: tz,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -22,7 +22,15 @@ export function convertToTimezone(date: Date, timezone: string): Date {
   const [month, day, year] = datePart.split("/").map(Number);
   const [hour, minute, second] = timePart.split(":").map(Number);
 
-  return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  return Date.UTC(year, month - 1, day, hour % 24, minute, second);
+}
+
+/**
+ * Convert a UTC date to wall-clock time in the target timezone.
+ */
+export function convertToTimezone(date: Date, timezone: string): Date {
+  if (IS_ZERO_OFFSET(timezone)) return new Date(date.getTime());
+  return new Date(wallClockMs(date, timezone));
 }
 
 /**
@@ -54,24 +62,8 @@ export function convertFromTimezone(date: Date, timezone: string): Date {
 
   // Iteratively refine the guess (usually converges in 1-2 iterations)
   for (let i = 0; i < 3; i++) {
-    const testDate = new Date(guess);
-    const testStr = testDate.toLocaleString("en-US", {
-      timeZone: timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-
     // Parse what wall-clock time this guess produces
-    const [testDatePart, testTimePart] = testStr.split(", ");
-    const [testMonth, testDay, testYear] = testDatePart.split("/").map(Number);
-    const [testHour, testMinute, testSecond] = testTimePart.split(":").map(Number);
-
-    const gotTime = Date.UTC(testYear, testMonth - 1, testDay, testHour, testMinute, testSecond);
+    const gotTime = wallClockMs(new Date(guess), timezone);
 
     // Track the best guess (closest to target, but prefer later times if equal distance)
     const diff = Math.abs(targetTime - gotTime);
@@ -95,22 +87,7 @@ export function convertFromTimezone(date: Date, timezone: string): Date {
   let guessLater = oneHourLater;
 
   for (let i = 0; i < 2; i++) {
-    const testStr = new Date(guessLater).toLocaleString("en-US", {
-      timeZone: timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-
-    const [testDatePart, testTimePart] = testStr.split(", ");
-    const [testMonth, testDay, testYear] = testDatePart.split("/").map(Number);
-    const [testHour, testMinute, testSecond] = testTimePart.split(":").map(Number);
-
-    const gotTime = Date.UTC(testYear, testMonth - 1, testDay, testHour, testMinute, testSecond);
+    const gotTime = wallClockMs(new Date(guessLater), timezone);
 
     if (gotTime === oneHourLater) {
       // Target time was in a DST gap, return the time after the gap

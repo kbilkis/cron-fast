@@ -78,34 +78,32 @@ export function parse(expression: string): ParsedCron {
 
   if (bounds.length === 0) throw new Error(`Invalid cron expression: "${expression}"`);
   if (bounds.length !== 10)
-    throw new Error(
-      `Invalid cron expression: "${expression}" - expected 5 fields, got ${bounds.length / 2}`,
-    );
+    throw new Error(`Invalid cron expression: "${expression}" - field count`);
 
   const minuteIsWildcard = isStar(s, bounds[0], bounds[1]);
   const minute = minuteIsWildcard ? WC_MINUTE : parseFieldAt(s, bounds[0], bounds[1], 0, 59);
-  if (!minute) throw new Error(`Invalid cron expression: "${expression}" - invalid minute field`);
+  if (!minute) throw new Error(`Invalid cron expression: "${expression}" - minute`);
 
   const hourIsWildcard = isStar(s, bounds[2], bounds[3]);
   const hour = hourIsWildcard ? WC_HOUR : parseFieldAt(s, bounds[2], bounds[3], 0, 23);
-  if (!hour) throw new Error(`Invalid cron expression: "${expression}" - invalid hour field`);
+  if (!hour) throw new Error(`Invalid cron expression: "${expression}" - hour`);
 
   const dayIsWildcard = isStar(s, bounds[4], bounds[5]);
   const day = dayIsWildcard ? WC_DAY : parseFieldAt(s, bounds[4], bounds[5], 1, 31);
-  if (!day) throw new Error(`Invalid cron expression: "${expression}" - invalid day field`);
+  if (!day) throw new Error(`Invalid cron expression: "${expression}" - day`);
 
   const monthIsWildcard = isStar(s, bounds[6], bounds[7]);
   const month = monthIsWildcard
     ? WC_MONTH
     : parseFieldAt(s, bounds[6], bounds[7], 1, 12, MONTH_NAMES);
-  if (!month) throw new Error(`Invalid cron expression: "${expression}" - invalid month field`);
+  if (!month) throw new Error(`Invalid cron expression: "${expression}" - month`);
 
   const weekdayIsWildcard = isStar(s, bounds[8], bounds[9]);
   const weekdayRaw = weekdayIsWildcard
     ? null
     : parseFieldAt(s, bounds[8], bounds[9], 0, 7, WEEKDAY_NAMES);
   if (!weekdayIsWildcard && !weekdayRaw)
-    throw new Error(`Invalid cron expression: "${expression}" - invalid weekday field`);
+    throw new Error(`Invalid cron expression: "${expression}" - weekday`);
 
   // Normalize Sunday (7 -> 0); wildcard uses the pre-normalized constant.
   const weekdays = weekdayIsWildcard ? WC_WEEKDAY : normalizeWeekday(weekdayRaw as number[]);
@@ -129,7 +127,7 @@ export function parse(expression: string): ParsedCron {
   };
 
   if (!hasValidDayMonthCombinations(parsed))
-    throw new Error(`Invalid cron expression: "${expression}" - impossible day/month combination`);
+    throw new Error(`Invalid cron expression: "${expression}" - impossible day/month`);
 
   return parsed;
 }

@@ -7,6 +7,11 @@ const MAX_ITERATIONS = 1000;
 
 type Direction = "next" | "prev";
 
+/** Directional lookup: first value >= target (next) or last value <= target (prev). */
+function find(values: number[], target: number, next: boolean): number | null {
+  return next ? findNext(values, target) : findPrevious(values, target);
+}
+
 /** Local-wall minus UTC offset in minutes at `instant` for `tz`. */
 function tzOffsetMinutes(instant: Date, tz: string): number {
   return (convertToTimezone(instant, tz).getTime() - instant.getTime()) / 60000;
@@ -159,9 +164,7 @@ function intAdvanceDate(
 
   // Month mismatch
   if (!(parsed.monthIsWildcard || parsed.month.includes(st.month))) {
-    const targetMonth = next
-      ? findNext(parsed.month, st.month + off)
-      : findPrevious(parsed.month, st.month + off);
+    const targetMonth = find(parsed.month, st.month + off, next);
     if (targetMonth !== null) {
       intResetToMonthBoundary(parsed, st, st.year, targetMonth, next, bHour, bMin);
     } else {
@@ -194,9 +197,7 @@ function intAdvanceDate(
 
   // Hour mismatch
   if (!(parsed.hourIsWildcard || parsed.hour.includes(st.hour))) {
-    const targetHour = next
-      ? findNext(parsed.hour, st.hour + off)
-      : findPrevious(parsed.hour, st.hour + off);
+    const targetHour = find(parsed.hour, st.hour + off, next);
     if (targetHour !== null) {
       st.hour = targetHour;
       st.minute = bMin;
@@ -209,15 +210,11 @@ function intAdvanceDate(
   // Minute mismatch. Reaching here means month/day/hour all matched, so intMatches
   // returned false solely because the minute differs — the minute can never already
   // match here (that would imply intMatches was true and this function never ran).
-  const targetMinute = next
-    ? findNext(parsed.minute, st.minute + off)
-    : findPrevious(parsed.minute, st.minute + off);
+  const targetMinute = find(parsed.minute, st.minute + off, next);
   if (targetMinute !== null) {
     st.minute = targetMinute;
   } else {
-    const targetHour = next
-      ? findNext(parsed.hour, st.hour + off)
-      : findPrevious(parsed.hour, st.hour + off);
+    const targetHour = find(parsed.hour, st.hour + off, next);
     if (targetHour !== null) {
       st.hour = targetHour;
       st.minute = bMin;
@@ -244,7 +241,7 @@ function intMoveToDay(
     else if (!next && t < 1) targetDay = null;
     else targetDay = t;
   } else {
-    targetDay = next ? findNext(parsed.day, st.day + off) : findPrevious(parsed.day, st.day + off);
+    targetDay = find(parsed.day, st.day + off, next);
   }
   const dayIsValid = next ? targetDay !== null && targetDay <= daysInMonth : targetDay !== null;
   if (dayIsValid) {
@@ -252,9 +249,7 @@ function intMoveToDay(
     st.hour = bHour;
     st.minute = bMin;
   } else {
-    const targetMonth = next
-      ? findNext(parsed.month, st.month + off)
-      : findPrevious(parsed.month, st.month + off);
+    const targetMonth = find(parsed.month, st.month + off, next);
     if (targetMonth !== null) {
       intResetToMonthBoundary(parsed, st, st.year, targetMonth, next, bHour, bMin);
     } else {

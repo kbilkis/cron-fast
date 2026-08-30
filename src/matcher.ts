@@ -30,15 +30,8 @@ export function isOrMode(parsed: ParsedCron): boolean {
 /**
  * Day-of-month and day-of-week use OR logic by default
  * If both are restricted (not *), match either one
- *
- * @param daysInMonth - Optional validation that day is valid for the month (used by scheduler)
  */
-export function matchesDayOrWeekday(
-  parsed: ParsedCron,
-  day: number,
-  weekday: number,
-  daysInMonth?: number,
-): boolean {
+export function matchesDayOrWeekday(parsed: ParsedCron, day: number, weekday: number): boolean {
   // Both wildcards: always matches (skip both .includes scans)
   if (parsed.dayIsWildcard && parsed.weekdayIsWildcard) return true;
 
@@ -46,17 +39,10 @@ export function matchesDayOrWeekday(
   if (parsed.dayIsWildcard) return parsed.weekday.includes(weekday);
 
   // Only day restricted
-  if (parsed.weekdayIsWildcard) {
-    if (daysInMonth !== undefined && day > daysInMonth) return false;
-    return parsed.day.includes(day);
-  }
+  if (parsed.weekdayIsWildcard) return parsed.day.includes(day);
 
   // Both restricted -> OR
-  const dayOk =
-    daysInMonth !== undefined
-      ? day <= daysInMonth && parsed.day.includes(day)
-      : parsed.day.includes(day);
-  return dayOk || parsed.weekday.includes(weekday);
+  return parsed.day.includes(day) || parsed.weekday.includes(weekday);
 }
 
 /**

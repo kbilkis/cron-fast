@@ -941,43 +941,6 @@ describe("matcher", () => {
       expect(matchesDayOrWeekday(parsed, 14, 2)).toBe(false); // 14th, Tuesday
     });
 
-    it("should respect daysInMonth parameter when provided", () => {
-      // This is important for February - day 31 should not match in Feb
-      const parsed = createParsed([31], [0, 1, 2, 3, 4, 5, 6], false, true);
-
-      // Without daysInMonth, day 31 would match
-      expect(matchesDayOrWeekday(parsed, 31, 1)).toBe(true);
-
-      // With daysInMonth = 28 (February non-leap), day 31 should NOT match
-      expect(matchesDayOrWeekday(parsed, 31, 1, 28)).toBe(false);
-
-      // With daysInMonth = 29 (February leap), day 31 should still NOT match
-      expect(matchesDayOrWeekday(parsed, 31, 1, 29)).toBe(false);
-
-      // With daysInMonth = 31, day 31 should match
-      expect(matchesDayOrWeekday(parsed, 31, 1, 31)).toBe(true);
-
-      // Day 30 should not match if daysInMonth is 28
-      const parsed30 = createParsed([30], [0, 1, 2, 3, 4, 5, 6], false, true);
-      expect(matchesDayOrWeekday(parsed30, 30, 1, 28)).toBe(false);
-      expect(matchesDayOrWeekday(parsed30, 30, 1, 30)).toBe(true);
-    });
-
-    it("should validate day against daysInMonth in OR mode", () => {
-      // Both day and weekday restricted - should use OR logic
-      const parsed = createParsed([31], [1], false, false);
-
-      // In February (28 days), day 31 is invalid but Monday still matches
-      expect(matchesDayOrWeekday(parsed, 31, 1, 28)).toBe(true); // Monday matches via OR
-
-      // If it's not Monday either, should be false
-      expect(matchesDayOrWeekday(parsed, 31, 0, 28)).toBe(false); // Neither matches
-
-      // In January (31 days), day 31 is valid
-      expect(matchesDayOrWeekday(parsed, 31, 0, 31)).toBe(true); // Day 31 matches
-      expect(matchesDayOrWeekday(parsed, 31, 3, 31)).toBe(true); // Both match
-    });
-
     it("should handle multiple days and weekdays in OR mode", () => {
       // Days 1,15 OR weekdays Mon,Wed,Fri
       const parsed = createParsed([1, 15], [1, 3, 5], false, false);

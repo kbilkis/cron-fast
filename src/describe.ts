@@ -26,7 +26,7 @@ const WEEKDAY_NAMES = [
   "Saturday",
 ];
 
-const ORDINAL_SUFFIXES = ["th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"] as const;
+const ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"] as const;
 
 /**
  * Generate a human-readable description of a cron expression.
@@ -121,7 +121,7 @@ function describeMinute(minutes: number[]): string {
   }
 
   // List specific minutes
-  return `At minutes ${formatList(minutes)}`;
+  return `At minutes ${formatStringList(minutes.map(String))}`;
 }
 
 function describeHour(hours: number[]): string {
@@ -179,15 +179,8 @@ function describeWeekday(weekdays: number[], isWildcard: boolean): string {
     return `on ${formatWeekday(weekdays[0], true)}`;
   }
 
-  // Check for weekdays (Mon-Fri)
-  if (
-    weekdays.length === 5 &&
-    weekdays.includes(1) &&
-    weekdays.includes(2) &&
-    weekdays.includes(3) &&
-    weekdays.includes(4) &&
-    weekdays.includes(5)
-  ) {
+  // Check for weekdays (Mon-Fri); parser emits these sorted
+  if (weekdays.length === 5 && weekdays.join("") === "12345") {
     return "on weekdays";
   }
 
@@ -249,17 +242,12 @@ function formatTime(hour: number, minute: number): string {
 
 function formatOrdinal(n: number): string {
   if (n >= 11 && n <= 13) return `${n}th`;
-  return `${n}${ORDINAL_SUFFIXES[n % 10]}`;
+  return `${n}${ORDINAL_SUFFIXES[n % 10] ?? "th"}`;
 }
 
 function formatWeekday(day: number, plural: boolean = false): string {
   const name = WEEKDAY_NAMES[day];
   return plural ? `${name}s` : name;
-}
-
-function formatList(numbers: number[]): string {
-  const strings = numbers.map(String);
-  return formatStringList(strings);
 }
 
 export function formatStringList(items: string[]): string {
