@@ -206,6 +206,8 @@ function parseFieldAt(
   }
 
   const values: number[] = [];
+  let prev = -1;
+  let needsSort = false;
   let i = lo;
 
   // Read a value at i (advances i in place). Returns the value, or -1 if invalid.
@@ -284,8 +286,14 @@ function parseFieldAt(
     }
 
     if (hasStep || isStar2 || isRange) {
-      for (let v = start; v <= end; v += step) values.push(v);
+      for (let v = start; v <= end; v += step) {
+        if (v <= prev) needsSort = true;
+        prev = v;
+        values.push(v);
+      }
     } else {
+      if (start <= prev) needsSort = true;
+      prev = start;
       values.push(start);
     }
 
@@ -297,6 +305,7 @@ function parseFieldAt(
     }
   }
 
+  if (!needsSort) return values;
   return values.sort((a, b) => a - b).filter((v, idx, arr) => idx === 0 || arr[idx - 1] !== v);
 }
 
