@@ -1002,6 +1002,132 @@ describe("scheduler", () => {
       });
     });
 
+    describe("stepped fields evaluate in the option timezone (Europe/Vilnius)", () => {
+      // September 2026 Vilnius is EEST (UTC+3): 17:56:30Z = 20:56:30 local.
+      const from = new Date("2026-09-01T17:56:30Z");
+
+      describe("* */6 * * * (every minute during wall-clock hours 0,6,12,18)", () => {
+        it("should match the hour field in Vilnius wall time, not UTC", () => {
+          // Wall clock reads 20:56; next matching wall hour is 00:00 (Sep 2) = 21:00Z.
+          // 18:00Z only matches if hours were (incorrectly) evaluated in UTC.
+          const next = nextRun("* */6 * * *", { from, timezone: "Europe/Vilnius" });
+          expect(next.toISOString()).toBe("2026-09-01T21:00:00.000Z");
+        });
+
+        it("should contrast with UTC evaluation when no timezone is given", () => {
+          const next = nextRun("* */6 * * *", { from });
+          expect(next.toISOString()).toBe("2026-09-01T18:00:00.000Z");
+        });
+
+        it("should fire every minute of the wall-clock hour block, then jump six hours", () => {
+          const runs = nextRuns("* */6 * * *", 61, { from, timezone: "Europe/Vilnius" });
+          expect(runs[0].toISOString()).toBe("2026-09-01T21:00:00.000Z"); // 00:00 wall
+          expect(runs[59].toISOString()).toBe("2026-09-01T21:59:00.000Z"); // 00:59 wall
+          expect(runs[60].toISOString()).toBe("2026-09-02T03:00:00.000Z"); // 06:00 wall
+        });
+
+        it("isMatch should evaluate the hour field in the given timezone", () => {
+          const tz = { timezone: "Europe/Vilnius" };
+          expect(isMatch("* */6 * * *", new Date("2026-09-01T18:00:00Z"), tz)).toBe(false); // 21:00 wall
+          expect(isMatch("* */6 * * *", new Date("2026-09-01T21:00:00Z"), tz)).toBe(true); // 00:00 wall
+          expect(isMatch("* */6 * * *", new Date("2026-09-01T15:00:00Z"), tz)).toBe(true); // 18:00 wall
+        });
+      });
+
+      describe("* * */6 * * (every minute on wall-clock days 1,7,13,19,25)", () => {
+        it("should fire every minute of the matching wall-clock day", () => {
+          const runs = nextRuns("* * */6 * *", 3, { from, timezone: "Europe/Vilnius" });
+          expect(runs.map((r) => r.toISOString())).toEqual([
+            "2026-09-01T17:57:00.000Z",
+            "2026-09-01T17:58:00.000Z",
+            "2026-09-01T17:59:00.000Z",
+          ]);
+        });
+
+        it("should fire the last wall-clock minute of the day, then jump to the next stepped day", () => {
+          // 20:58:30Z = 23:58:30 wall; next run is 23:59 wall = 20:59Z.
+          const last = nextRun("* * */6 * *", {
+            from: new Date("2026-09-01T20:58:30Z"),
+            timezone: "Europe/Vilnius",
+          });
+          expect(last.toISOString()).toBe("2026-09-01T20:59:00.000Z");
+
+          // 21:00:01Z is already Sep 2 in Vilnius; day 2 is not in */6, so the
+          // next match is Sep 7 00:00 wall = Sep 6 21:00Z.
+          const afterMidnight = nextRun("* * */6 * *", {
+            from: new Date("2026-09-01T21:00:01Z"),
+            timezone: "Europe/Vilnius",
+          });
+          expect(afterMidnight.toISOString()).toBe("2026-09-06T21:00:00.000Z");
+        });
+
+        it("isMatch should evaluate the day-of-month field in the given timezone", () => {
+          const tz = { timezone: "Europe/Vilnius" };
+          expect(isMatch("* * */6 * *", new Date("2026-09-01T20:30:00Z"), tz)).toBe(true); // Sep 1, 23:30 wall
+          expect(isMatch("* * */6 * *", new Date("2026-09-01T21:30:00Z"), tz)).toBe(false); // Sep 2, 00:30 wall
+          expect(isMatch("* * */6 * *", new Date("2026-09-07T12:00:00Z"), tz)).toBe(true); // Sep 7 wall
+        });
+      });
+
+      describe("* * * */2 * (every minute in months Jan,Mar,May,Jul,Sep,Nov)", () => {
+        it("should skip non-stepped months", () => {
+          // February 2026 is not in the month set; next run is Mar 1 UTC.
+          const next = nextRun("* * * */2 *", { from: new Date("2026-02-15T10:30:00Z") });
+          expect(next.toISOString()).toBe("2026-03-01T00:00:00.000Z");
+        });
+
+        it("should evaluate the month field in the given timezone", () => {
+          // 2026-01-31T22:00Z is still January in UTC (in the step set), but
+          // 00:00 Feb 1 on the Vilnius wall clock (EET, UTC+2) — February is
+          // not in the set, so the next run is Mar 1 wall = Feb 28 22:00Z.
+          const from = new Date("2026-01-31T22:00:00Z");
+          const noTz = nextRun("* * * */2 *", { from });
+          expect(noTz.toISOString()).toBe("2026-01-31T22:01:00.000Z"); // January, in set
+
+          const tz = nextRun("* * * */2 *", { from, timezone: "Europe/Vilnius" });
+          expect(tz.toISOString()).toBe("2026-02-28T22:00:00.000Z"); // Mar 1, 00:00 wall
+        });
+
+        it("isMatch should evaluate the month field in the given timezone", () => {
+          const tz = { timezone: "Europe/Vilnius" };
+          expect(isMatch("* * * */2 *", new Date("2026-01-31T22:30:00Z"), tz)).toBe(false); // Feb 1 wall
+          expect(isMatch("* * * */2 *", new Date("2026-02-28T22:30:00Z"), tz)).toBe(true); // Mar 1 wall
+        });
+      });
+
+      describe("* * * * */2 (every minute on Sun,Tue,Thu,Sat)", () => {
+        it("should fire on a stepped weekday", () => {
+          // Sep 1, 2026 is a Tuesday (in the step set).
+          const next = nextRun("* * * * */2", { from: new Date("2026-09-01T12:00:00Z") });
+          expect(next.toISOString()).toBe("2026-09-01T12:01:00.000Z");
+        });
+
+        it("should skip non-stepped weekdays", () => {
+          // Sep 2, 2026 is a Wednesday; next stepped weekday is Thursday Sep 3.
+          const next = nextRun("* * * * */2", { from: new Date("2026-09-02T20:30:00Z") });
+          expect(next.toISOString()).toBe("2026-09-03T00:00:00.000Z");
+        });
+
+        it("should evaluate the weekday field in the given timezone", () => {
+          // 2026-09-02T20:30Z is Wednesday in UTC, but 23:30 Wednesday on the
+          // Vilnius wall clock. Wednesday is not in the set, so the next run
+          // is Thursday Sep 3, 00:00 wall = Sep 2 21:00Z — not 20:31Z, which
+          // only matches if the weekday were evaluated on the UTC date.
+          const next = nextRun("* * * * */2", {
+            from: new Date("2026-09-02T20:30:00Z"),
+            timezone: "Europe/Vilnius",
+          });
+          expect(next.toISOString()).toBe("2026-09-02T21:00:00.000Z");
+        });
+
+        it("isMatch should evaluate the weekday field in the given timezone", () => {
+          const tz = { timezone: "Europe/Vilnius" };
+          expect(isMatch("* * * * */2", new Date("2026-09-02T20:30:00Z"), tz)).toBe(false); // Wed wall
+          expect(isMatch("* * * * */2", new Date("2026-09-02T21:30:00Z"), tz)).toBe(true); // Thu wall
+        });
+      });
+    });
+
     describe("DST transitions", () => {
       it("should handle spring forward transition (2 AM -> 3 AM)", () => {
         // March 8, 2026: clocks spring forward from 2 AM to 3 AM in US

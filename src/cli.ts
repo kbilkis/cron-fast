@@ -110,34 +110,28 @@ function parseArgs(argv: string[]): CliOptions {
   return options;
 }
 
+function formatLocal(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZoneName: "shortOffset",
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  // Some environments render midnight as hour 24 (h24 cycle); fold back to 0.
+  const hour = String(Number(get("hour")) % 24).padStart(2, "0");
+  return `${get("weekday")} ${get("month")} ${get("day")} ${hour}:${get("minute")}:${get("second")} ${get("timeZoneName")}`;
+}
+
 function formatRun(date: Date, timezone?: string): string {
   try {
-    const local = timezone
-      ? date.toLocaleString("en-US", {
-          timeZone: timezone,
-          weekday: "short",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        })
-      : date.toLocaleString("en-US", {
-          weekday: "short",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-          timeZone: "UTC",
-        });
-
     const iso = date.toISOString();
-    return `${iso}  (${local})`;
+    return `${iso}  (${formatLocal(date, timezone ?? "UTC")})`;
   } catch {
     return date.toISOString();
   }

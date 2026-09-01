@@ -103,6 +103,25 @@ describe("cli", () => {
     expect(result.stdout).toMatch(/\d{4}-\d{2}-\d{2}/);
   });
 
+  it("should schedule and display in the given timezone", () => {
+    // 17:56:30Z = 20:56:30 Vilnius (EEST, UTC+3). Hours */6 must match the
+    // Vilnius wall clock, so the next run is Sep 2 00:00 wall = 21:00Z —
+    // not 18:00Z (which only matches if hours were evaluated in UTC).
+    const result = run('"* */6 * * *" --next 1 --tz Europe/Vilnius --from 2026-09-01T17:56:30Z');
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Europe/Vilnius timezone");
+    expect(result.stdout).toContain("2026-09-01T21:00:00.000Z"); // UTC ISO
+    expect(result.stdout).toContain("Sep 2 00:00:00 GMT+3"); // Vilnius wall clock + offset
+    expect(result.stdout).not.toContain("2026-09-01T18:00:00.000Z");
+  });
+
+  it("should label UTC runs with GMT offset when no timezone is given", () => {
+    const result = run('"0 9 * * *" --next 1 --from 2026-03-15T10:00:00Z');
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("2026-03-16T09:00:00.000Z");
+    expect(result.stdout).toMatch(/09:00:00\s+GMT/); // UTC-labeled display
+  });
+
   it("should error on invalid expression in next mode", () => {
     const result = run('"0 0 31 2 *" --next 1');
     expect(result.exitCode).toBe(1);
