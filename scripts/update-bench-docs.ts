@@ -49,24 +49,25 @@ function normalizeCategory(cat: string): Category {
 
 function parseVitest(json: any): { results: NormalizedResult[]; runtimeVer: string } {
   const results: NormalizedResult[] = [];
-  for (const file of json.files ?? []) {
-    for (const group of file.groups ?? []) {
-      const parts = group.fullName.split(" > ");
-      const groupName = parts[parts.length - 1];
+  for (const file of json.testResults ?? []) {
+    for (const testCase of file.assertionResults ?? []) {
+      const groupName = testCase.ancestorTitles?.[testCase.ancestorTitles.length - 1] ?? "";
       const colonIdx = groupName.indexOf(": ");
       const category = normalizeCategory(groupName.substring(0, colonIdx));
-      const testCase = groupName.substring(colonIdx + 2);
+      const testCaseName = groupName.substring(colonIdx + 2);
 
-      for (const bench of group.benchmarks ?? []) {
-        results.push({
-          category,
-          testCase,
-          library: bench.name,
-          opsPerSecond: bench.hz,
-          meanNs: bench.mean != null ? bench.mean * 1e6 : undefined,
-          p99Ns: bench.p99 != null ? bench.p99 * 1e6 : undefined,
-          rme: bench.rme,
-        });
+      for (const benchmark of testCase.benchmarks ?? []) {
+        for (const task of benchmark.tasks ?? []) {
+          results.push({
+            category,
+            testCase: testCaseName,
+            library: task.name,
+            opsPerSecond: task.throughput?.mean,
+            meanNs: task.latency?.mean != null ? task.latency.mean * 1e6 : undefined,
+            p99Ns: task.latency?.p99 != null ? task.latency.p99 * 1e6 : undefined,
+            rme: task.latency?.rme,
+          });
+        }
       }
     }
   }
@@ -133,7 +134,7 @@ function parseMitata(json: any): { results: NormalizedResult[]; runtimeVer: stri
 
 function detectAndParse(jsonStr: string): { results: NormalizedResult[]; runtimeVer: string } {
   const json = JSON.parse(jsonStr);
-  if (json.files) return parseVitest(json);
+  if (json.testResults) return parseVitest(json);
   if (json.runtime?.includes("Deno")) return parseDeno(json);
   if (json.benchmarks?.[0]?.alias) return parseMitata(json);
   throw new Error("Unrecognized JSON format");

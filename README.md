@@ -38,16 +38,16 @@ Fast and tiny JavaScript/TypeScript cron parser with timezone support. Works eve
 
 cron-fast is designed for speed and efficiency. Here's how it compares to popular alternatives:
 
-> Tested with cron-fast v3.10.0, croner v10.0.1, cron-parser v5.10.0, cron-schedule v6.0.0 on Node.js v24.19.0
+> Tested with cron-fast v3.11.0, croner v10.0.1, cron-parser v5.10.0, cron-schedule v6.0.0 on Node.js v24.19.0
 
-| Operation           | cron-fast       | cron-schedule | cron-parser | croner    |
-| ------------------- | --------------- | ------------- | ----------- | --------- |
-| Next run            | **2328k ops/s** | 342k ops/s    | 36k ops/s   | 32k ops/s |
-| Next 100 runs       | **44k ops/s**   | 16k ops/s     | 1k ops/s    | 2k ops/s  |
-| Previous run        | **2433k ops/s** | 361k ops/s    | 40k ops/s   | 32k ops/s |
-| Validation          | **7085k ops/s** | 470k ops/s    | 97k ops/s   | 35k ops/s |
-| Validation (varied) | **6172k ops/s** | 490k ops/s    | 119k ops/s  | 36k ops/s |
-| Parsing             | **7047k ops/s** | 470k ops/s    | 98k ops/s   | 35k ops/s |
+| Operation           | cron-fast        | cron-schedule | cron-parser | croner    |
+| ------------------- | ---------------- | ------------- | ----------- | --------- |
+| Next run            | **2780k ops/s**  | 345k ops/s    | 35k ops/s   | 32k ops/s |
+| Next 100 runs       | **45k ops/s**    | 15k ops/s     | 1k ops/s    | 2k ops/s  |
+| Previous run        | **2883k ops/s**  | 365k ops/s    | 40k ops/s   | 32k ops/s |
+| Validation          | **10110k ops/s** | 474k ops/s    | 97k ops/s   | 34k ops/s |
+| Validation (varied) | **8605k ops/s**  | 526k ops/s    | 120k ops/s  | 34k ops/s |
+| Parsing             | **10062k ops/s** | 470k ops/s    | 97k ops/s   | 35k ops/s |
 
 See [detailed benchmarks](docs/benchmark-comparison.md) (including Deno and Bun runtimes) for more information.
 
@@ -217,7 +217,7 @@ nextRun("0 9 * * *", { from: utc }).getTime() === nextRun("0 9 * * *", { from: e
 
 ## Bundle Size
 
-cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.10.0):
+cron-fast is extremely lightweight and fully tree-shakeable. Here are the actual bundle sizes for different import scenarios (tested with v3.11.0):
 
 | Import                                                 | Raw      | Minified | Gzipped     |
 | ------------------------------------------------------ | -------- | -------- | ----------- |

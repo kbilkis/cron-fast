@@ -1,14 +1,21 @@
-import { nextRun, previousRun, nextRuns, isValid, parse } from "../../src/index.js";
+import * as cronFast from "cron-fast";
 import { Cron } from "croner";
 import { CronExpressionParser } from "cron-parser";
 import { parseCronExpression } from "cron-schedule";
 import cronValidateModule from "cron-validate";
 
 const cronValidate = (cronValidateModule as any).default || cronValidateModule;
+const {
+  nextRun: cfNextRun,
+  previousRun: cfPreviousRun,
+  nextRuns: cfNextRuns,
+  isValid: cfIsValid,
+  parse: cfParse,
+} = cronFast;
 
 export const adapters = {
   nextRun: {
-    "cron-fast": (cron: string, from: Date) => nextRun(cron, { from }),
+    "cron-fast": (cron: string, from: Date) => cfNextRun(cron, { from }),
     croner: (cron: string, from: Date) =>
       new Cron(cron, { startAt: from, paused: true }).nextRun(from),
     "cron-parser": (cron: string, from: Date) =>
@@ -16,7 +23,7 @@ export const adapters = {
     "cron-schedule": (cron: string, from: Date) => parseCronExpression(cron).getNextDate(from),
   },
   previousRun: {
-    "cron-fast": (cron: string, from: Date) => previousRun(cron, { from }),
+    "cron-fast": (cron: string, from: Date) => cfPreviousRun(cron, { from }),
     croner: (cron: string, from: Date) =>
       new Cron(cron, { startAt: from, paused: true }).previousRuns(1, from),
     "cron-parser": (cron: string, from: Date) =>
@@ -24,7 +31,7 @@ export const adapters = {
     "cron-schedule": (cron: string, from: Date) => parseCronExpression(cron).getPrevDate(from),
   },
   nextRuns: {
-    "cron-fast": (cron: string, from: Date) => nextRuns(cron, 100, { from }),
+    "cron-fast": (cron: string, from: Date) => cfNextRuns(cron, 100, { from }),
     croner: (cron: string, from: Date) =>
       new Cron(cron, { startAt: from, paused: true }).nextRuns(100, from),
     "cron-parser": (cron: string, from: Date) =>
@@ -33,7 +40,7 @@ export const adapters = {
       parseCronExpression(cron).getNextDates(100, from),
   },
   validation: {
-    "cron-fast": (cron: string) => isValid(cron),
+    "cron-fast": (cron: string) => cfIsValid(cron),
     croner: (cron: string) => {
       try {
         new Cron(cron, { paused: true });
@@ -58,7 +65,7 @@ export const adapters = {
     "cron-validate": (cron: string) => cronValidate(cron),
   },
   parsing: {
-    "cron-fast": (cron: string) => parse(cron),
+    "cron-fast": (cron: string) => cfParse(cron),
     croner: (cron: string) => new Cron(cron, { paused: true }),
     "cron-parser": (cron: string) => CronExpressionParser.parse(cron),
     "cron-schedule": (cron: string) => parseCronExpression(cron),

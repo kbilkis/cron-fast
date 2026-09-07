@@ -1,27 +1,29 @@
-import { describe, bench } from "vitest";
+import { describe, test } from "vitest";
 import { validationCases } from "../cases.js";
 import { adapters } from "./_libs.js";
 
+const { validation: validationAdapters } = adapters;
+
 for (const cron of validationCases) {
   describe(`validation: ${cron}`, () => {
-    bench("cron-fast", () => {
-      adapters.validation["cron-fast"](cron);
-    });
-
-    bench("cron-validate", () => {
-      adapters.validation["cron-validate"](cron);
-    });
-
-    bench("cron-schedule", () => {
-      adapters.validation["cron-schedule"](cron);
-    });
-
-    bench("cron-parser", () => {
-      adapters.validation["cron-parser"](cron);
-    });
-
-    bench("croner", () => {
-      adapters.validation.croner(cron);
+    test("compare", async ({ bench }) => {
+      await bench.compare(
+        bench("cron-fast", () => {
+          validationAdapters["cron-fast"](cron);
+        }),
+        bench("cron-validate", () => {
+          validationAdapters["cron-validate"](cron);
+        }),
+        bench("cron-schedule", () => {
+          validationAdapters["cron-schedule"](cron);
+        }),
+        bench("cron-parser", () => {
+          validationAdapters["cron-parser"](cron);
+        }),
+        bench("croner", () => {
+          validationAdapters.croner(cron);
+        }),
+      );
     });
   });
 }

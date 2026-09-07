@@ -1,5 +1,7 @@
-import { describe, bench } from "vitest";
+import { describe, test } from "vitest";
 import { adapters } from "./_libs.js";
+
+const { validation: validationAdapters } = adapters;
 import { validationVariedCases } from "../cases.js";
 
 const VARIED = validationVariedCases;
@@ -8,23 +10,23 @@ let i = 0;
 const next = (): string => VARIED[i++ % N];
 
 describe("validateVaried: varied inputs (anti-cache)", () => {
-  bench("cron-fast", () => {
-    adapters.validation["cron-fast"](next());
-  });
-
-  bench("cron-validate", () => {
-    adapters.validation["cron-validate"](next());
-  });
-
-  bench("cron-schedule", () => {
-    adapters.validation["cron-schedule"](next());
-  });
-
-  bench("cron-parser", () => {
-    adapters.validation["cron-parser"](next());
-  });
-
-  bench("croner", () => {
-    adapters.validation.croner(next());
+  test("compare", async ({ bench }) => {
+    await bench.compare(
+      bench("cron-fast", () => {
+        validationAdapters["cron-fast"](next());
+      }),
+      bench("cron-validate", () => {
+        validationAdapters["cron-validate"](next());
+      }),
+      bench("cron-schedule", () => {
+        validationAdapters["cron-schedule"](next());
+      }),
+      bench("cron-parser", () => {
+        validationAdapters["cron-parser"](next());
+      }),
+      bench("croner", () => {
+        validationAdapters.croner(next());
+      }),
+    );
   });
 });
