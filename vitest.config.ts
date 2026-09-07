@@ -9,7 +9,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
       include: ["src/**/*.ts"],
-      exclude: ["**/*.test.ts", "**/*.config.ts", "dist/**", "cli.ts"],
+      exclude: ["**/*.test.ts", "**/*.config.ts", "dist/**", "**/cli.ts"],
     },
     benchmark: {
       include: ["benchmark/vitest/**/*.bench.ts"],
