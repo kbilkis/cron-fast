@@ -81,9 +81,12 @@ jobs:
         run: bun run test:noCli
 
   # Test with Cloudflare Workers runtime (workerd via @cloudflare/vitest-pool-workers)
+  # Non-blocking: @cloudflare/vitest-pool-workers does not support vitest 5 yet.
+  # Revert continue-on-error once https://github.com/cloudflare/workers-sdk/pull/15500 ships.
   test-workerd:
     name: Test on workerd (Cloudflare Workers)
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
 
