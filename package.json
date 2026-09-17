@@ -1,6 +1,6 @@
 {
   "name": "cron-fast",
-  "version": "3.11.0",
+  "version": "3.12.0",
   "description": "Fast and tiny JavaScript/TypeScript cron parser with timezone support - works in Node.js, Deno, Bun, Cloudflare Workers, and browsers. Zero dependencies.",
   "keywords": [
     "browser",
@@ -97,22 +97,22 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
-    "@types/node": "^26.4.1",
-    "@vitest/coverage-v8": "^5.0.0",
-    "cron-parser": "^5.10.0",
+    "@types/node": "^26.6.1",
+    "@vitest/coverage-v8": "^5.0.1",
+    "cron-parser": "^5.10.1",
     "cron-schedule": "^6.0.0",
     "cron-validate": "^1.5.3",
     "croner": "^10.0.1",
     "esbuild": "^0.28.2",
-    "lint-staged": "^17.5.0",
+    "lint-staged": "^17.5.1",
     "mitata": "^1.0.34",
-    "oxfmt": "^0.66.0",
-    "oxlint": "^1.81.0",
+    "oxfmt": "^0.68.0",
+    "oxlint": "^1.83.0",
     "simple-git-hooks": "^2.14.0",
     "tsdown": "^0.23.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
-    "vitest": "5.0.0"
+    "vitest": "5.0.1"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged",

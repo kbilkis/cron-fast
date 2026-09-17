@@ -70,8 +70,20 @@ export function nextRuns(expression: string, count: number, options?: CronOption
   const tz = options?.timezone;
 
   const results: Date[] = [];
-  let current = options?.from || new Date();
 
+  if (tz === undefined) {
+    const first = nextFrom(parsed, options?.from || new Date(), undefined, expression);
+    results.push(first);
+    let cursorMs = first.getTime() + 60000;
+    for (let i = 1; i < count; i++) {
+      const next = findMatch(parsed, new Date(cursorMs), "next", undefined, expression);
+      results.push(next);
+      cursorMs = next.getTime() + 60000;
+    }
+    return results;
+  }
+
+  let current = options?.from || new Date();
   for (let i = 0; i < count; i++) {
     const next = nextFrom(parsed, current, tz, expression);
     results.push(next);
