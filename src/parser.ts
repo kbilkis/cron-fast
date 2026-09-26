@@ -65,59 +65,80 @@ export function parse(expression: string): ParsedCron {
   const s = expression;
   const n = s.length;
 
-  // Single-pass whitespace tokenization into 5 fields (no regex, no substring allocs)
-  const bounds: number[] = [];
+  // Fused single-pass scan: the moment a field's bounds are known (whitespace
+  // hit or end of string), run the star check inline and parse that field.
+  // No bounds array, no second pass.
+  let minute: number[] | null = null;
+  let hour: number[] | null = null;
+  let day: number[] | null = null;
+  let month: number[] | null = null;
+  let weekdayRaw: number[] | null = null;
+  let minuteIsWildcard = false;
+  let hourIsWildcard = false;
+  let dayIsWildcard = false;
+  let monthIsWildcard = false;
+  let weekdayIsWildcard = false;
+  // Error precedence: the field-count error must fire before content errors,
+  // so remember the first content failure (1=minute..5=weekday) and throw it
+  // only after the count check.
+  let badField = 0;
+
+  let fields = 0;
   let p = 0;
   while (p < n && isWs(s.charCodeAt(p))) p++;
   while (p < n) {
     const lo = p;
     while (p < n && !isWs(s.charCodeAt(p))) p++;
-    bounds.push(lo, p);
+    const hi = p;
     while (p < n && isWs(s.charCodeAt(p))) p++;
+
+    const idx = fields++;
+    if (idx > 4 || badField !== 0) continue; // extras counted, content unchecked
+    if (idx === 0) {
+      minuteIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+      minute = minuteIsWildcard ? WC_MINUTE : parseFieldAt(s, lo, hi, 0, 59);
+      if (!minute) badField = 1;
+    } else if (idx === 1) {
+      hourIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+      hour = hourIsWildcard ? WC_HOUR : parseFieldAt(s, lo, hi, 0, 23);
+      if (!hour) badField = 2;
+    } else if (idx === 2) {
+      dayIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+      day = dayIsWildcard ? WC_DAY : parseFieldAt(s, lo, hi, 1, 31);
+      if (!day) badField = 3;
+    } else if (idx === 3) {
+      monthIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+      month = monthIsWildcard ? WC_MONTH : parseFieldAt(s, lo, hi, 1, 12, MONTH_NAMES);
+      if (!month) badField = 4;
+    } else {
+      weekdayIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+      if (!weekdayIsWildcard) {
+        weekdayRaw = parseFieldAt(s, lo, hi, 0, 7, WEEKDAY_NAMES);
+        if (!weekdayRaw) badField = 5;
+      }
+    }
   }
 
-  if (bounds.length === 0) throw new Error(`Invalid cron expression: "${expression}"`);
-  if (bounds.length !== 10)
-    throw new Error(`Invalid cron expression: "${expression}" - field count`);
-
-  const minuteIsWildcard = isStar(s, bounds[0], bounds[1]);
-  const minute = minuteIsWildcard ? WC_MINUTE : parseFieldAt(s, bounds[0], bounds[1], 0, 59);
-  if (!minute) throw new Error(`Invalid cron expression: "${expression}" - minute`);
-
-  const hourIsWildcard = isStar(s, bounds[2], bounds[3]);
-  const hour = hourIsWildcard ? WC_HOUR : parseFieldAt(s, bounds[2], bounds[3], 0, 23);
-  if (!hour) throw new Error(`Invalid cron expression: "${expression}" - hour`);
-
-  const dayIsWildcard = isStar(s, bounds[4], bounds[5]);
-  const day = dayIsWildcard ? WC_DAY : parseFieldAt(s, bounds[4], bounds[5], 1, 31);
-  if (!day) throw new Error(`Invalid cron expression: "${expression}" - day`);
-
-  const monthIsWildcard = isStar(s, bounds[6], bounds[7]);
-  const month = monthIsWildcard
-    ? WC_MONTH
-    : parseFieldAt(s, bounds[6], bounds[7], 1, 12, MONTH_NAMES);
-  if (!month) throw new Error(`Invalid cron expression: "${expression}" - month`);
-
-  const weekdayIsWildcard = isStar(s, bounds[8], bounds[9]);
-  const weekdayRaw = weekdayIsWildcard
-    ? null
-    : parseFieldAt(s, bounds[8], bounds[9], 0, 7, WEEKDAY_NAMES);
-  if (!weekdayIsWildcard && !weekdayRaw)
-    throw new Error(`Invalid cron expression: "${expression}" - weekday`);
+  if (fields === 0) throw new Error(`Invalid cron expression: "${expression}"`);
+  if (fields !== 5) throw new Error(`Invalid cron expression: "${expression}" - field count`);
+  if (badField !== 0) {
+    const name = ["minute", "hour", "day", "month", "weekday"][badField - 1];
+    throw new Error(`Invalid cron expression: "${expression}" - ${name}`);
+  }
 
   // Normalize Sunday (7 -> 0); wildcard uses the pre-normalized constant.
-  const weekdays = weekdayIsWildcard ? WC_WEEKDAY : normalizeWeekday(weekdayRaw as number[]);
+  const weekdays = weekdayIsWildcard ? WC_WEEKDAY : normalizeWeekday(weekdayRaw!);
 
   // month is 1-indexed from parsing; shift to 0-indexed in place (skip wildcard).
   if (!monthIsWildcard) {
-    for (let i = 0; i < month.length; i++) month[i]--;
+    for (let i = 0; i < month!.length; i++) month![i]--;
   }
 
   const parsed: ParsedCron = {
-    minute,
-    hour,
-    day,
-    month,
+    minute: minute!,
+    hour: hour!,
+    day: day!,
+    month: month!,
     weekday: weekdays,
     minuteIsWildcard,
     hourIsWildcard,
@@ -169,16 +190,12 @@ function hasValidDayMonthCombinations(parsed: ParsedCron): boolean {
   return false;
 }
 
-function isStar(s: string, lo: number, hi: number): boolean {
-  return hi - lo === 1 && s.charCodeAt(lo) === 42; // '*'
-}
-
 /**
  * Parse a single cron field over substring s[lo..hi) (char-level, no split/substring allocs).
  * Semantics mirror the original: star, a, a-b, a-b/N, star/N, a/N, comma lists.
  */
-// All parseFieldAt call sites pre-check isStar and use the shared WC_* constants,
-// so every field reaching here contains at least one non-'*' character.
+// All parseFieldAt call sites pre-check for a lone '*' and use the shared WC_*
+// constants, so every field reaching here contains at least one non-'*' character.
 function parseFieldAt(
   s: string,
   lo: number,
