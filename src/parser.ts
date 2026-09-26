@@ -227,34 +227,6 @@ function parseFieldAt(
   let needsSort = false;
   let i = lo;
 
-  // Read a value at i (advances i in place). Returns the value, or -1 if invalid.
-  const read = (): number => {
-    const c = s.charCodeAt(i);
-    if (c >= 48 && c <= 57) {
-      // digits
-      let v = 0;
-      while (i < hi) {
-        const d = s.charCodeAt(i);
-        if (d < 48 || d > 57) break;
-        v = v * 10 + (d - 48);
-        i++;
-      }
-      return v;
-    }
-    if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) {
-      // name (rare)
-      const start = i;
-      while (i < hi) {
-        const d = s.charCodeAt(i);
-        if (!((d >= 65 && d <= 90) || (d >= 97 && d <= 122))) break;
-        i++;
-      }
-      const nm = names && names[s.slice(start, i).toLowerCase()];
-      return nm !== undefined ? nm : -1;
-    }
-    return -1;
-  };
-
   while (i < hi) {
     let isStar2 = false;
     let isRange = false;
@@ -269,14 +241,50 @@ function parseFieldAt(
       i++;
     } else {
       const tokStartStart = i;
-      start = read();
+      const c1 = s.charCodeAt(i);
+      if (c1 >= 48 && c1 <= 57) {
+        // digits
+        start = 0;
+        while (i < hi) {
+          const d = s.charCodeAt(i);
+          if (d < 48 || d > 57) break;
+          start = start * 10 + (d - 48);
+          i++;
+        }
+      } else if (isNameChar(c1)) {
+        // name (rare)
+        const nameStart = i;
+        while (i < hi && isNameChar(s.charCodeAt(i))) i++;
+        const nm = names && names[s.slice(nameStart, i).toLowerCase()];
+        start = nm !== undefined ? nm : -1;
+      } else {
+        start = -1;
+      }
       if (start < 0) return null;
       if (i < hi && s.charCodeAt(i) === 45) {
         // '-'
         isRange = true;
         i++;
         const tokEnd = i;
-        end = read();
+        const c2 = s.charCodeAt(i);
+        if (c2 >= 48 && c2 <= 57) {
+          // digits
+          end = 0;
+          while (i < hi) {
+            const d = s.charCodeAt(i);
+            if (d < 48 || d > 57) break;
+            end = end * 10 + (d - 48);
+            i++;
+          }
+        } else if (isNameChar(c2)) {
+          // name (rare)
+          const nameStart = i;
+          while (i < hi && isNameChar(s.charCodeAt(i))) i++;
+          const nm = names && names[s.slice(nameStart, i).toLowerCase()];
+          end = nm !== undefined ? nm : -1;
+        } else {
+          end = -1;
+        }
         if (end < 0) return null;
         if (max === 7) {
           if (end === 0 && isNameChar(s.charCodeAt(tokEnd))) end = 7;
@@ -296,7 +304,25 @@ function parseFieldAt(
       // '/'
       hasStep = true;
       i++;
-      step = read();
+      const c3 = s.charCodeAt(i);
+      if (c3 >= 48 && c3 <= 57) {
+        // digits
+        step = 0;
+        while (i < hi) {
+          const d = s.charCodeAt(i);
+          if (d < 48 || d > 57) break;
+          step = step * 10 + (d - 48);
+          i++;
+        }
+      } else if (isNameChar(c3)) {
+        // name (rare)
+        const nameStart = i;
+        while (i < hi && isNameChar(s.charCodeAt(i))) i++;
+        const nm = names && names[s.slice(nameStart, i).toLowerCase()];
+        step = nm !== undefined ? nm : -1;
+      } else {
+        step = -1;
+      }
       if (step <= 0) return null;
       // single value + step → range to max
       if (!isStar2 && !isRange) end = max;

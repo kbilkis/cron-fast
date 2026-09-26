@@ -220,6 +220,23 @@ describe("parser", () => {
         const result = parse("* * * * */2");
         expect(result.weekday).toEqual([0, 2, 4, 6]);
       });
+
+      it("should accept a resolvable name as step value", () => {
+        const result = parse("* * * */MAR *");
+        expect(result.month).toEqual([0, 3, 6, 9]); // MAR=3 → 1,4,7,10 → shifted
+      });
+
+      it("should reject an unresolvable name as step value", () => {
+        expect(() => parse("* * * */FOO *")).toThrow(/- month$/);
+      });
+
+      it("should reject a name as step in a field without names", () => {
+        expect(() => parse("*/JAN * * * *")).toThrow(/- minute$/);
+      });
+
+      it("should reject a name as step that resolves to zero", () => {
+        expect(() => parse("* * * * */SUN")).toThrow(/- weekday$/);
+      });
     });
 
     describe("comma-separated values", () => {
