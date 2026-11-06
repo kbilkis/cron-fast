@@ -10,4 +10,7 @@ export default defineConfig({
       },
     }),
   ],
+  test: {
+    setupFiles: ["./test/workerd-setup.ts"],
+  },
 });

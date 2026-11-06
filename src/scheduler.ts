@@ -19,15 +19,15 @@ function tzOffsetMinutes(instant: Date, tz: string): number {
 
 /** Next match strictly after `from`, with DST fall-back ambiguity re-resolve. */
 function nextFrom(parsed: ParsedCron, from: Date, tz?: string, expression?: string): Date {
-  const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
-  start.setUTCSeconds(0, 0);
-  start.setUTCMinutes(start.getUTCMinutes() + 1);
+  const fromMs = from.getTime();
+  const baseMs = tz !== undefined ? convertToTimezone(from, tz).getTime() : fromMs;
+  const startMs = Math.floor(baseMs / 60000) * 60000 + 60000;
 
-  const result = findMatch(parsed, start, "next", tz, expression);
+  const result = findMatchMs(parsed, startMs, "next", tz, expression);
 
   // DST fall-back: the matched wall minute may occur twice; if the conversion picked
   // the earlier pass (<= from), jump by the actual transition size (offset delta).
-  if (tz !== undefined && result.getTime() <= from.getTime()) {
+  if (tz !== undefined && result.getTime() <= fromMs) {
     const shift =
       tzOffsetMinutes(result, tz) - tzOffsetMinutes(new Date(result.getTime() + 24 * 3600000), tz);
     const candidate = new Date(result.getTime() + shift * 60000);
@@ -51,15 +51,12 @@ export function previousRun(expression: string, options?: CronOptions): Date {
 
   const from = options?.from || new Date();
   const tz = options?.timezone;
-
-  const start = tz !== undefined ? convertToTimezone(from, tz) : new Date(from);
-  start.setUTCSeconds(0, 0);
+  const fromMs = from.getTime();
+  const baseMs = tz !== undefined ? convertToTimezone(from, tz).getTime() : fromMs;
   // The current minute counts as "previous" unless `from` is exactly on its boundary.
-  if (from.getUTCSeconds() === 0 && from.getUTCMilliseconds() === 0) {
-    start.setUTCMinutes(start.getUTCMinutes() - 1);
-  }
+  const startMs = fromMs % 60000 === 0 ? baseMs - 60000 : Math.floor(baseMs / 60000) * 60000;
 
-  return findMatch(parsed, start, "prev", tz, expression);
+  return findMatchMs(parsed, startMs, "prev", tz, expression);
 }
 
 /** Get next N execution times. Throws if expression or timezone is invalid. */
@@ -76,7 +73,7 @@ export function nextRuns(expression: string, count: number, options?: CronOption
     results.push(first);
     let cursorMs = first.getTime() + 60000;
     for (let i = 1; i < count; i++) {
-      const next = findMatch(parsed, new Date(cursorMs), "next", undefined, expression);
+      const next = findMatchMs(parsed, cursorMs, "next", undefined, expression);
       results.push(next);
       cursorMs = next.getTime() + 60000;
     }
@@ -105,45 +102,75 @@ export function isMatch(
   return matches(parsed, checkDate);
 }
 
-/** Find matching time using smart field-increment algorithm (integer-time loop) */
-function findMatch(
+/** Find matching time using smart field-increment algorithm (integer-time loop). */
+function findMatchMs(
   parsed: ParsedCron,
-  start: Date,
+  startMs: number,
   dir: Direction,
   tz?: string,
   expression?: string,
 ): Date {
   const next = dir === "next";
-  const st = {
-    year: start.getUTCFullYear(),
-    month: start.getUTCMonth(),
-    day: start.getUTCDate(),
-    hour: start.getUTCHours(),
-    minute: start.getUTCMinutes(),
-  };
+  const st: St = { year: 0, month: 0, day: 0, hour: 0, minute: 0 };
+  stFromMs(st, startMs);
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     if (intMatches(parsed, st)) {
-      if (i === 0) return tz !== undefined ? convertFromTimezone(start, tz) : start;
-      const d = new Date(Date.UTC(st.year, st.month, st.day, st.hour, st.minute, 0, 0));
-      return tz !== undefined ? convertFromTimezone(d, tz) : d;
+      const ms =
+        i === 0
+          ? startMs
+          : daysFromCivil(st.year, st.month, st.day) * 86400000 +
+            st.hour * 3600000 +
+            st.minute * 60000;
+      return tz !== undefined ? convertFromTimezone(new Date(ms), tz) : new Date(ms);
     }
     intAdvanceDate(parsed, st, next);
   }
   throw new Error(`No match found for "${expression}" within iteration limit`);
 }
 
+/** Days since 1970-01-01 from civil date (Howard Hinnant), month 0-indexed. */
+function daysFromCivil(y: number, m: number, d: number): number {
+  const mm = m + 1;
+  const y2 = y - (mm <= 2 ? 1 : 0);
+  const era = Math.floor(y2 / 400);
+  const yoe = y2 - era * 400;
+  const mp = mm + (mm > 2 ? -3 : 9);
+  const doy = (((153 * mp + 2) / 5) | 0) + d - 1;
+  const doe = yoe * 365 + ((yoe / 4) | 0) - ((yoe / 100) | 0) + doy;
+  return era * 146097 + doe - 719468;
+}
+
+interface St {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+}
+
+/** Decompose epoch-ms into civil fields (Hinnant civil_from_days); avoids Date API. */
+function stFromMs(st: St, ms: number): void {
+  const days = Math.floor(ms / 86400000);
+  const z = days + 719468;
+  const era = Math.floor(z / 146097);
+  const doe = z - era * 146097;
+  const yoe = ((doe - ((doe / 1460) | 0) + ((doe / 36524) | 0) - ((doe / 146096) | 0)) / 365) | 0;
+  const doy = doe - (365 * yoe + ((yoe / 4) | 0) - ((yoe / 100) | 0));
+  const mp = ((5 * doy + 2) / 153) | 0;
+  const day = doy - (((153 * mp + 2) / 5) | 0) + 1;
+  const m = mp < 10 ? mp + 3 : mp - 9;
+  st.year = yoe + era * 400 + (m <= 2 ? 1 : 0);
+  st.month = m - 1;
+  st.day = day;
+  const rem = ms - days * 86400000;
+  st.hour = (rem / 3600000) | 0;
+  st.minute = ((rem / 60000) | 0) % 60;
+}
+
 /** Weekday (0=Sun..6=Sat) from civil date via Howard Hinnant's days_from_civil. */
 function weekdayOf(year: number, month: number, day: number): number {
-  const m = month + 1;
-  const y2 = year - (m <= 2 ? 1 : 0);
-  const era = Math.trunc((y2 >= 0 ? y2 : y2 - 399) / 400);
-  const yoe = y2 - era * 400;
-  const mp = m + (m > 2 ? -3 : 9);
-  const doy = Math.trunc((153 * mp + 2) / 5) + day - 1;
-  const doe = yoe * 365 + Math.trunc(yoe / 4) - Math.trunc(yoe / 100) + doy;
-  const days = era * 146097 + doe - 719468;
-  return ((days % 7) + 4 + 7) % 7;
+  return ((daysFromCivil(year, month, day) % 7) + 4 + 7) % 7;
 }
 
 /** Match check on integer fields; wildcard fields skip the .includes scan. */
