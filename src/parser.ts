@@ -40,10 +40,6 @@ const WEEKDAY_NAMES: Record<string, number> = {
  *
  * @throws {Error} If the expression is invalid
  */
-function isWs(c: number): boolean {
-  return c === 32 || (c >= 9 && c <= 13);
-}
-
 function isNameChar(c: number): boolean {
   return (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
 }
@@ -65,9 +61,6 @@ export function parse(expression: string): ParsedCron {
   const s = expression;
   const n = s.length;
 
-  // Fused single-pass scan: the moment a field's bounds are known (whitespace
-  // hit or end of string), run the star check inline and parse that field.
-  // No bounds array, no second pass.
   let minute: number[] | null = null;
   let hour: number[] | null = null;
   let day: number[] | null = null;
@@ -83,38 +76,133 @@ export function parse(expression: string): ParsedCron {
   // only after the count check.
   let badField = 0;
 
+  // Single-pass flat scan: one charCodeAt per position; the moment whitespace
+  // closes a field, run the star check and parse it inline. No second pass, no
+  // boundary re-reads. (Trailing field handled by a duplicated close-block
+  // below — a virtual `i === n` terminator tested slower: per-char branch.)
   let fields = 0;
-  let p = 0;
-  while (p < n && isWs(s.charCodeAt(p))) p++;
-  while (p < n) {
-    const lo = p;
-    while (p < n && !isWs(s.charCodeAt(p))) p++;
-    const hi = p;
-    while (p < n && isWs(s.charCodeAt(p))) p++;
-
-    const idx = fields++;
-    if (idx > 4 || badField !== 0) continue; // extras counted, content unchecked
-    if (idx === 0) {
-      minuteIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
-      minute = minuteIsWildcard ? WC_MINUTE : parseFieldAt(s, lo, hi, 0, 59);
-      if (!minute) badField = 1;
-    } else if (idx === 1) {
-      hourIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
-      hour = hourIsWildcard ? WC_HOUR : parseFieldAt(s, lo, hi, 0, 23);
-      if (!hour) badField = 2;
-    } else if (idx === 2) {
-      dayIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
-      day = dayIsWildcard ? WC_DAY : parseFieldAt(s, lo, hi, 1, 31);
-      if (!day) badField = 3;
-    } else if (idx === 3) {
-      monthIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
-      month = monthIsWildcard ? WC_MONTH : parseFieldAt(s, lo, hi, 1, 12, MONTH_NAMES);
-      if (!month) badField = 4;
+  let lo = 0;
+  let inField = false;
+  // Digit accumulation: a token that is nothing but digits is the most common
+  // field shape, so the scanner collects its value on the fly — pure-digit
+  // fields are validated inline and never reach parseFieldAt.
+  let tokVal = 0;
+  let tokPure = true;
+  for (let i = 0; i < n; i++) {
+    const c = s.charCodeAt(i);
+    if (c === 32 || (c >= 9 && c <= 13)) {
+      if (inField) {
+        inField = false;
+        const hi = i;
+        const idx = fields++;
+        if (idx > 4 || badField !== 0) continue; // extras counted, content unchecked
+        if (tokPure) {
+          // pure-digit token (never '*'): inline single-value parse
+          if (idx === 0) {
+            if (tokVal > 59) badField = 1;
+            else minute = [tokVal];
+          } else if (idx === 1) {
+            if (tokVal > 23) badField = 2;
+            else hour = [tokVal];
+          } else if (idx === 2) {
+            if (tokVal < 1 || tokVal > 31) badField = 3;
+            else day = [tokVal];
+          } else if (idx === 3) {
+            if (tokVal < 1 || tokVal > 12) badField = 4;
+            else month = [tokVal];
+          } else {
+            if (tokVal > 7) badField = 5;
+            else weekdayRaw = [tokVal];
+          }
+        } else if (idx === 0) {
+          minuteIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+          minute = minuteIsWildcard ? WC_MINUTE : parseFieldAt(s, lo, hi, 0, 59);
+          if (!minute) badField = 1;
+        } else if (idx === 1) {
+          hourIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+          hour = hourIsWildcard ? WC_HOUR : parseFieldAt(s, lo, hi, 0, 23);
+          if (!hour) badField = 2;
+        } else if (idx === 2) {
+          dayIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+          day = dayIsWildcard ? WC_DAY : parseFieldAt(s, lo, hi, 1, 31);
+          if (!day) badField = 3;
+        } else if (idx === 3) {
+          monthIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+          month = monthIsWildcard ? WC_MONTH : parseFieldAt(s, lo, hi, 1, 12, MONTH_NAMES);
+          if (!month) badField = 4;
+        } else {
+          weekdayIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+          if (!weekdayIsWildcard) {
+            weekdayRaw = parseFieldAt(s, lo, hi, 0, 7, WEEKDAY_NAMES);
+            if (!weekdayRaw) badField = 5;
+          }
+        }
+      }
     } else {
-      weekdayIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
-      if (!weekdayIsWildcard) {
-        weekdayRaw = parseFieldAt(s, lo, hi, 0, 7, WEEKDAY_NAMES);
-        if (!weekdayRaw) badField = 5;
+      const d = c - 48;
+      if (d <= 9) {
+        if (inField) {
+          if (d >= 0) tokVal = tokVal * 10 + d;
+          else tokPure = false;
+        } else {
+          inField = true;
+          lo = i;
+          tokVal = d;
+          tokPure = d >= 0;
+        }
+      } else {
+        if (!inField) {
+          inField = true;
+          lo = i;
+          tokVal = 0;
+        }
+        tokPure = false;
+      }
+    }
+  }
+  if (inField) {
+    const hi = n;
+    const idx = fields++;
+    if (idx <= 4 && badField === 0) {
+      if (tokPure) {
+        if (idx === 0) {
+          if (tokVal > 59) badField = 1;
+          else minute = [tokVal];
+        } else if (idx === 1) {
+          if (tokVal > 23) badField = 2;
+          else hour = [tokVal];
+        } else if (idx === 2) {
+          if (tokVal < 1 || tokVal > 31) badField = 3;
+          else day = [tokVal];
+        } else if (idx === 3) {
+          if (tokVal < 1 || tokVal > 12) badField = 4;
+          else month = [tokVal];
+        } else {
+          if (tokVal > 7) badField = 5;
+          else weekdayRaw = [tokVal];
+        }
+      } else if (idx === 0) {
+        minuteIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+        minute = minuteIsWildcard ? WC_MINUTE : parseFieldAt(s, lo, hi, 0, 59);
+        if (!minute) badField = 1;
+      } else if (idx === 1) {
+        hourIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+        hour = hourIsWildcard ? WC_HOUR : parseFieldAt(s, lo, hi, 0, 23);
+        if (!hour) badField = 2;
+      } else if (idx === 2) {
+        dayIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+        day = dayIsWildcard ? WC_DAY : parseFieldAt(s, lo, hi, 1, 31);
+        if (!day) badField = 3;
+      } else if (idx === 3) {
+        monthIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+        month = monthIsWildcard ? WC_MONTH : parseFieldAt(s, lo, hi, 1, 12, MONTH_NAMES);
+        if (!month) badField = 4;
+      } else {
+        weekdayIsWildcard = hi - lo === 1 && s.charCodeAt(lo) === 42;
+        if (!weekdayIsWildcard) {
+          weekdayRaw = parseFieldAt(s, lo, hi, 0, 7, WEEKDAY_NAMES);
+          if (!weekdayRaw) badField = 5;
+        }
       }
     }
   }
@@ -154,6 +242,7 @@ export function parse(expression: string): ParsedCron {
 }
 
 function normalizeWeekday(weekdayRaw: number[]): number[] {
+  if (weekdayRaw.indexOf(7) === -1) return weekdayRaw; // already normalized
   const hasZero = weekdayRaw.indexOf(0) !== -1;
   const weekdays: number[] = [];
   for (const d of weekdayRaw) {
@@ -204,24 +293,8 @@ function parseFieldAt(
   max: number,
   names?: Record<string, number>,
 ): number[] | null {
-  const len = hi - lo;
-  if (len <= 2) {
-    const d0 = s.charCodeAt(lo) - 48;
-    if (d0 >= 0 && d0 <= 9) {
-      let v = d0;
-      let plain = true;
-      if (len === 2) {
-        const d1 = s.charCodeAt(lo + 1) - 48;
-        if (d1 >= 0 && d1 <= 9) v = v * 10 + d1;
-        else plain = false;
-      }
-      if (plain) {
-        if (v < min || v > max) return null;
-        return [v];
-      }
-    }
-  }
-
+  // Note: pure-digit tokens 1-2 chars long never reach here — the scanner in
+  // parse() folds them inline. Only impure or longer tokens get this far.
   const values: number[] = [];
   let prev = -1;
   let needsSort = false;

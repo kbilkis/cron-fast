@@ -962,4 +962,73 @@ describe("parser", () => {
       });
     });
   });
+
+  describe("scanner edge coverage (flat scan + inline digit paths)", () => {
+    // Fields that end at end-of-string exercise the trailing close-block;
+    // short expressions put pure/impure fields at every position.
+    it("runs every trailing pure-digit field position before the field-count error", () => {
+      // Short expressions still close each field inline before throwing.
+      expect(() => parse("0")).toThrow("- field count");
+      expect(() => parse("0 9")).toThrow("- field count");
+      expect(() => parse("0 9 15")).toThrow("- field count");
+      expect(() => parse("0 9 15 3")).toThrow("- field count");
+    });
+
+    it("runs trailing impure/wildcard fields before the field-count error", () => {
+      expect(() => parse("0 *")).toThrow("- field count");
+      expect(() => parse("0 9 */2")).toThrow("- field count");
+    });
+
+    it("rejects out-of-range pure-digit trailing fields", () => {
+      expect(isValid("60")).toBe(false);
+      expect(isValid("0 24")).toBe(false);
+      expect(isValid("0 9 32")).toBe(false);
+      expect(isValid("0 9 15 13")).toBe(false);
+    });
+
+    it("closes weekday fields at mid-string whitespace before the field-count error", () => {
+      // 6 fields: the weekday closes on the space before the 6th field.
+      expect(() => parse("0 0 1 1 1 *")).toThrow("- field count"); // pure weekday mid-string
+      expect(() => parse("0 0 1 1 8 *")).toThrow("- field count"); // invalid pure weekday
+      expect(() => parse("0 0 1 1 x *")).toThrow("- field count"); // impure weekday mid-string
+    });
+
+    it("runs trailing impure range fields at hour/day/month positions", () => {
+      expect(() => parse("0 9-10")).toThrow("- field count"); // valid impure hour
+      expect(() => parse("0 9 1-5")).toThrow("- field count"); // valid impure day
+      expect(() => parse("0 9 15 3-6")).toThrow("- field count"); // valid impure month
+    });
+
+    it("rejects invalid impure trailing fields at hour/day/month positions", () => {
+      expect(isValid("0 24-30")).toBe(false); // hour range out of bounds
+      expect(isValid("0 9 40-50")).toBe(false); // day range out of bounds
+      expect(isValid("0 9 15 13-20")).toBe(false); // month range out of bounds
+    });
+
+    it("handles leading zeros in inline digit fields", () => {
+      expect(parse("007 0 1 1 0").minute).toEqual([7]);
+      expect(parse("000 0 1 1 0").minute).toEqual([0]);
+      expect(parse("059 0 1 1 0").minute).toEqual([59]);
+    });
+
+    it("covers mid-string impure month/weekday outcomes inside five-field expressions", () => {
+      expect(isValid("0 0 1 13-20 *")).toBe(false); // invalid impure month mid-string
+      expect(parse("0 0 1 3-6 *").month).toEqual([2, 3, 4, 5]); // valid impure month mid-string
+      expect(() => parse("0 0 1 1 mon *")).toThrow("- field count"); // valid impure weekday mid-string
+      expect(parse("0 0 1 1 1-5").weekday).toEqual([1, 2, 3, 4, 5]); // valid impure weekday trailing
+    });
+
+    it("rejects non-name, non-digit characters in name fields", () => {
+      expect(isValid("0 0 * * [")).toBe(false);
+      expect(isValid("0 0 * * @")).toBe(false);
+    });
+
+    it("rejects pure-digit values out of range at each field", () => {
+      expect(isValid("60 0 1 1 0")).toBe(false);
+      expect(isValid("0 24 1 1 0")).toBe(false);
+      expect(isValid("0 0 0 1 0")).toBe(false); // day 0
+      expect(isValid("0 0 1 0 0")).toBe(false); // month 0
+      expect(isValid("0 0 1 1 8")).toBe(false); // weekday 8
+    });
+  });
 });
